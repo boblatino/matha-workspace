@@ -2,14 +2,14 @@ CC := g++
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./
 
 
-all: mwsShObj.o mwsBuilder.o
+all: mwsFileBuilder.o mwsConfigReader.cpp
 
 
-mwsShObj.o: mwsShObj.cpp mwsShObj.h
-	${CC} -g -I./ -Wall -c -o mwsShObj.o mwsShObj.cpp
+mwsConfigReader.o: mwsConfigReader.cpp
+	${CC} -g -I./ -Wall -c -o $@ $<
 
-mwsBuilder.o: mwsBuilder.cpp mwsBuilder.h
-	${CC} -g -Wall -c mwsBuilder.cpp -o mwsBuilder.o
+mwsFileBuilder.o: mwsFileBuilder.cpp
+	${CC} -g -Wall -c -o $@ $<
 
 
 
