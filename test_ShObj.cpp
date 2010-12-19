@@ -1,14 +1,24 @@
-#include <iostream>
+#include <cstdio>
 
 using namespace std;
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 
 void function1()
 {
-	cout << "In function 1" << endl;
+	puts("In function 1\n");
 }
 
 
-void function2( string text )
+void function2( char text[25] )
 {
-	cout << "In function 2 with text : " << text << endl;
+	printf("In function 2 with text : %s\n", text);
 }
+
+
+#ifdef __cplusplus
+}
+#endif
