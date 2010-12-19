@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <string.h>
+#include <string>
 #include <map>
 #include "mwsConfigReader.h"
 

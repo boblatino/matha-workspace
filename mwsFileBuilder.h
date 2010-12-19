@@ -1,8 +1,8 @@
 #ifndef MWSFILEBUILDER_H
 #define MWSFILEBUILDER_H
 
-#include <mwsBuilder.h>
-#include <mwsConfigReader.h>
+#include "mwsBuilder.h"
+#include "mwsConfigReader.h"
 
 #define	WS_DEFAULT_LENGTH	20
 #define	WS_DEFAULT_WIDTH	20
@@ -16,7 +16,7 @@ namespace mws
 	{
 		public:
 			mwsFileBuilder( string configFileName );
-
+			~mwsFileBuilder();
 		private:
 			mwsConfigReader * configReader;
 

@@ -1,7 +1,7 @@
-#include <mwsFileBuilder.h>
-#include <mwsConfigReader.h>
-#include <mwsWorkspace.h>
-#include <mwsIWSO.h>
+#include "mwsFileBuilder.h"
+#include "mwsConfigReader.h"
+#include "mwsWorkspace.h"
+#include "mwsIWSO.h"
 #include <map>
 #include <string>
 #include <list>	
