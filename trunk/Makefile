@@ -9,7 +9,7 @@ mwsConfigReader.o: mwsConfigReader.cpp
 	${CC} -g -I./ -Wall -c -o $@ $<
 
 mwsFileBuilder.o: mwsFileBuilder.cpp
-	${CC} -g -Wall -c -o $@ $<
+	${CC} -g -I./ -Wall -c -o $@ $<
 
 
 
