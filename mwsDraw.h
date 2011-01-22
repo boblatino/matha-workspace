@@ -50,6 +50,7 @@ class mwsDrawable{
        mwsshapes getshape();
        int getradius();
        posv getpos();
+       void setpos();
 };
 
 //////////////////////////////////////////////////////////
@@ -65,6 +66,8 @@ class mwsGraphicsAdapter{
        static mwsGraphicsAdapter *instance;
        dlist shapeso;
        mwsGraphicsAdapter();
+       void DrawPolygon(posv shapeos,int gradius,float* colorsa);
+       void DrawCircle(posv shapeos,int gradius,float* colorsa);
     public:
        static mwsGraphicsAdapter *getInstance();
        void make(mwsDrawable &drawthis);
@@ -74,15 +77,7 @@ class mwsGraphicsAdapter{
        void draw();
 };
 
-/////////////////////////////////////////////////////////
-
-void mwsDrawStub();
-void reshape(int w,int h);
-void DrawPolygon(posv shapeos,int gradius,float* colorsa);
-void DrawCircle(posv shapeos,int gradius,float* colorsa);
-void keya(unsigned char key,int x,int y);
-
-/////////////////////////////////////////////////////////
+///////////////////////////////////////////
 
 #endif
 
