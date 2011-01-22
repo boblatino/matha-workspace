@@ -9,6 +9,13 @@
 #include <gL/glut.h>
 #include <functional>
 
+
+///////////////////////////////////////////
+
+void mwsDrawStub();
+void reshape(int w,int h);
+void keya(unsigned char key,int x,int y);
+
 ///////////////////////////////////////////
 
 mwscolors::mwscolors(float r,float g,float b,float alphaa){
@@ -42,7 +49,7 @@ ldims mwsshapes::getdims(){
 mwsDrawable::mwsDrawable(mwscolors &colorf,mwsshapes &shapeint,int radiusint,posv posint):shape(shapeint){
          color = colorf;
          radius = radiusint;
-         pos = posint;
+
 }
 
 mwscolors mwsDrawable::getcolor(){
@@ -59,6 +66,10 @@ int mwsDrawable::getradius(){
 
 posv mwsDrawable::getpos(){
          return pos;
+}
+
+void mwsDrawable::setpos(posv posint){
+         pos = posint;
 }
 
 ///////////////////////////////////////////
@@ -125,6 +136,28 @@ void mwsGraphicsAdapter::display(){
          glutMainLoop();
 }
 
+void mwsGraphicsAdapter::DrawPolygon(posv shapeos,int gradius,float* colorsa){
+        glPushMatrix();
+        glTranslatef((float)(shapeos[0] - gradius),(float)(shapeos[1] - gradius),0);
+        glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,colorsa);
+        glRectf(0,0,(float) gradius*2,(float) gradius*2);
+        glPopMatrix();
+}
+
+void mwsGraphicsAdapter::DrawCircle(posv shapeos,int gradius,float* colorsa){
+        glPushMatrix();
+        GLUquadricObj *glopj;
+        glopj = gluNewQuadric();
+        glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,colorsa);
+        glTranslatef((float)shapeos[0],(float)shapeos[1], 0);
+        gluDisk(glopj, 0, gradius, 32, 4);
+        glPopMatrix();
+}
+
+void mwsGraphicsAdapter::refresh(){
+    draw();
+}
+
 ///////////////////////////////////////////
 
 void mwsDrawStub() {
@@ -141,28 +174,6 @@ void reshape(int w,int h){
     gluLookAt(0,0,10,0,0,0,0,1,0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-}
-
-///////////////////////////////////////////
-
-void DrawPolygon(posv shapeos,int gradius,float* colorsa){
-        glPushMatrix();
-        glTranslatef((float)(shapeos[0] - gradius),(float)(shapeos[1] - gradius),0);
-        glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,colorsa);
-        glRectf(0,0,(float) gradius*2,(float) gradius*2);
-        glPopMatrix();
-}
-
-///////////////////////////////////////////
-
-void DrawCircle(posv shapeos,int gradius,float* colorsa){
-        glPushMatrix();
-        GLUquadricObj *glopj;
-        glopj = gluNewQuadric();
-        glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,colorsa);
-        glTranslatef((float)shapeos[0],(float)shapeos[1], 0);
-        gluDisk(glopj, 0, gradius, 32, 4);
-        glPopMatrix();
 }
 
 ///////////////////////////////////////////
