@@ -50,7 +50,7 @@ class mwsDrawable{
        mwsshapes getshape();
        int getradius();
        posv getpos();
-       void setpos();
+       void setpos(posv posint);
 };
 
 //////////////////////////////////////////////////////////
