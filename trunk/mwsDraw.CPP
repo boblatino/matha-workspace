@@ -6,7 +6,7 @@
    #include <windows.h>
 #endif
 
-#include <gL/glut.h>
+#include <GL/glut.h>
 #include <functional>
 
 
@@ -19,14 +19,14 @@ void keya(unsigned char key,int x,int y);
 ///////////////////////////////////////////
 
 mwscolors::mwscolors(float r,float g,float b,float alphaa){
-	wscolor[0] = r;
-	wscolor[1] = g;
-	wscolor[2] = b;
-	wscolor[3] = alphaa;
+        wscolor[0] = r;
+        wscolor[1] = g;
+        wscolor[2] = b;
+        wscolor[3] = alphaa;
 }
 
 float* mwscolors::getcolors(){
-	return wscolor;
+        return wscolor;
 }
 
 ///////////////////////////////////////////
@@ -49,7 +49,7 @@ ldims mwsshapes::getdims(){
 mwsDrawable::mwsDrawable(mwscolors &colorf,mwsshapes &shapeint,int radiusint,posv posint):shape(shapeint){
          color = colorf;
          radius = radiusint;
-
+         pos = posint;
 }
 
 mwscolors mwsDrawable::getcolor(){
@@ -79,7 +79,7 @@ mwsGraphicsAdapter *mwsGraphicsAdapter::instance=NULL;
 mwsGraphicsAdapter::mwsGraphicsAdapter() {
      int ac = 1;
      char *av = "Graphic Adapter";
-	 glutInit(&ac,&av);
+         glutInit(&ac,&av);
      glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 }
 
@@ -91,15 +91,15 @@ void mwsGraphicsAdapter::mainWin(int width, int len,float wincolor[4],bool full=
          windowcolor[3] = wincolor[3];
          fullwin = full;
          glutInitWindowPosition(100,100);
-     	 glutInitWindowSize(width,len);
-    	 glutCreateWindow("Matha");
+         glutInitWindowSize(width,len);
+         glutCreateWindow("Matha");
          glEnable(GL_DEPTH_TEST);
          glEnable(GL_LIGHTING);
          glEnable(GL_LIGHT0);
 }
 
 mwsGraphicsAdapter *mwsGraphicsAdapter::getInstance(){
-	if(!(instance)){
+        if(!(instance)){
        instance = new mwsGraphicsAdapter;
     }
        return instance;
@@ -115,11 +115,11 @@ void mwsGraphicsAdapter::draw(){
         glLoadIdentity();
 
         for(dlist::iterator i = shapeso.begin(); i != shapeso.end();++i){
-	       if((*i)->getshape().getshape() == mwsCircle){
-	           DrawCircle((*i)->getpos(), (*i)->getradius(), (*i)->getcolor().getcolors());
-	       }else{
-               DrawPolygon((*i)->getpos(), (*i)->getradius(), (*i)->getcolor().getcolors());
-	       }
+               if((*i)->getshape().getshape() == mwsCircle){
+                   DrawCircle((*i)->getpos(), (*i)->getradius(), (*i)->getcolor().getcolors());
+               }else{
+                   DrawPolygon((*i)->getpos(), (*i)->getradius(), (*i)->getcolor().getcolors());
+               }
         }
 
         glutSwapBuffers();
@@ -155,7 +155,7 @@ void mwsGraphicsAdapter::DrawCircle(posv shapeos,int gradius,float* colorsa){
 }
 
 void mwsGraphicsAdapter::refresh(){
-    draw();
+    //draw();
 }
 
 ///////////////////////////////////////////
