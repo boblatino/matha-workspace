@@ -1,0 +1,18 @@
+INC_DIR := .
+
+LIB_DIR := 
+
+LIBS := -lglut -lGLU -lX11
+
+OBJS := mwsDraw.o main.o
+
+CFLAGS := -g
+
+%.o: %.cpp
+	g++ $(CFLAGS) -c $^ -I$(INC_DIR) -o $@
+
+test: $(OBJS)
+	g++ -o $@ $(LIB_DIR) $(LIBS) $^
+
+clean: 
+	rm -f *.o test
