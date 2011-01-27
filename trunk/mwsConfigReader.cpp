@@ -17,30 +17,30 @@ bool mwsConfigReader::readconf(string filen,map<string,map<string ,string> > &da
    string passa;
    string awd;
    int pos = -1;
-   if(fin){   
+   if(fin){
         string line;
         string name;
       while (getline(fin, line)) {
-        int pose=0;
+        int pose=-1;
         pos = line.find("[");
         pose = line.find("]");
         if(pos < 0){
             continue;
         }
-        if(pose == 0){
+        if(pose < 0){
             pose = line.size();
         }
         istringstream names(line.substr(pos+1,pose -1));
         names >> name;
         map<string ,string> values;
         pos = -1;
-        while (getline(fin, line)) {        
+        while (getline(fin, line)) {
             pos = line.find(":");
             if(pos < 0){
-                continue;
+                break;
             }
             istringstream attrib(line.substr(0,pos));
-            istringstream value(line.substr(pos + 1));           
+            istringstream value(line.substr(pos + 1));
             attrib >> passa;
             value >> awd;
             values[passa] = awd;
@@ -48,7 +48,7 @@ bool mwsConfigReader::readconf(string filen,map<string,map<string ,string> > &da
         data[name] = values;
      }
    fin.close();
-   return true;       
+   return true;
    }else{
        return false;
    }
