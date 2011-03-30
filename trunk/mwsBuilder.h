@@ -11,9 +11,9 @@ namespace mws
 	class mwsBuilder
 	{
 		public:
-			void rebuildWS( mwsWorkspace * );
-			void rebuildWSO( mwsWSO * );
-			mwsWorkspace * buildAll();
+			virtual void rebuildWS( mwsWorkspace * )=0;
+			virtual void rebuildWSO( mwsWSO * )=0;
+			virtual mwsWorkspace * buildAll()=0;
 	};
 }
 
