@@ -3,6 +3,7 @@
 
 #include "mwsBuilder.h"
 #include "mwsConfigReader.h"
+#include <mwsWorkspace.h>
 
 #define	WS_DEFAULT_LENGTH	20
 #define	WS_DEFAULT_WIDTH	20
@@ -12,15 +13,16 @@ using namespace std;
 
 namespace mws
 {
-	class mwsFileBuilder : public mwsBuilder
-	{
-		public:
-			mwsFileBuilder( string configFileName );
-			~mwsFileBuilder();
-		private:
-			mwsConfigReader * configReader;
-
-
-	};
+    class mwsFileBuilder : public mwsBuilder
+    {
+      public:
+        mwsFileBuilder( string configFileName );
+        ~mwsFileBuilder();
+        mwsWorkspace *buildAll();
+        void rebuildWS( mwsWorkspace * ws );
+        void rebuildWSO( mwsWSO * wso );
+      private:
+        mwsConfigReader * configReader;
+    };
 }
 #endif

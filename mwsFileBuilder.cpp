@@ -1,7 +1,7 @@
 #include "mwsFileBuilder.h"
 #include "mwsConfigReader.h"
 #include "mwsWorkspace.h"
-#include "mwsIWSO.h"
+#include "mwsWSO.h"
 #include <map>
 #include <string>
 #include <list>	
@@ -12,103 +12,75 @@ using namespace std;
 namespace mws
 {
 
-	mwsFileBuilder::mwsFileBuilder( string ConfigFileName )
-	{
-		mwsFileBuilder::configReader = new mwsConfigReader(
-				ConfigFileName );
-	}
+    mwsFileBuilder::mwsFileBuilder( string ConfigFileName ) : mwsBuilder()
+    {
+        configReader = new mwsConfigReader(ConfigFileName );
+    }
 
 
-	mwsFileBuilder::~mwsFileBuilder()
-	{
-		delete mwsFileBuilder::configReader;
-	}
+    mwsFileBuilder::~mwsFileBuilder()
+    {
+        delete configReader;
+    }
 
-	void mwsFileBuilder::rebuildWS( mwsWorkspace * ws )
-	{
-
-
-	}
+    void mwsFileBuilder::rebuildWS( mwsWorkspace * ws )
+    {
 
 
-	void mwsFileBuilder::rebuildWSO( mwsWSO * wso )
-	{
+    }
 
 
-	}
+    void mwsFileBuilder::rebuildWSO( mwsWSO * wso )
+    {
 
 
-	mwsWorkspace * mwsFileBuilder::buildAll()
-	{
-		mwsWorkspace * workspace = NULL;
-		map< string, map< string, string > > configList =
-			configReader->getAll();
-		map< string, map< string, string > >::iterator listIterator;
-		list< mwsWso > objectList;
+    }
 
-		for( listIterator = configList.begin();
-				listIterator!=configReader.end();
-				listIterator++ )
-		{
-			switch( listIterator->"name" )
-			{
-				case "workspace":
-					int length = ( listIterator->find(
-							"length" ) !=
-						configList.end() ) ?
-						atoi( (listIterator->"length").c_str ) :
-						WS_DEFAULT_LENGTH;
-					int width = ( listIterator->find(
-							"width" ) !=
-						configList.end() ) ?
-						atoi( (listIterator->"width").c_str ) :
-						WS_DEFAULT_WIDTH;
-					int resolution = ( listIterator->find(
-							"resolution" ) !=
-						configList.end() ) ?
-						atoi( (	listIterator-> "resolution").c_str ) :
-						WS_DEFAULT_RESOLUTION;
+    static inline mws_posv strtopos (std::string gg)
+    {
+        std::string nums = gg.substr (gg.find("[")+1, gg.length()-2);
+        mws_posv pos(2);
+        pos[0] = atoi (nums.substr (0, gg.find(",")-1).c_str());
+        pos[1] = atoi (nums.substr (gg.find(","), gg.length()).c_str());
+        return pos;       
+    }
+    
+    mwsWorkspace * mwsFileBuilder::buildAll()
+    {
+        mwsWorkspace * workspace = NULL;
+        mws_scopemap configList = configReader->getAll();
+        list< mwsWSO *> objectList;
 
-					workspace = new mwsWorkspace( length,
-							width, resolution );
+        cout<<"Config Reader reading "<<endl;
+        std::cout<<*configReader;
+        cout<<"Reader done "<<endl;
+        mws_attrmap wsmap = configList["workspace"];
+        /* FIXME: Need some generic parsing with error handling */
+        workspace = new mwsWorkspace( atoi(wsmap["length"].c_str()),
+                                      atoi(wsmap["width"].c_str()),
+                                      atoi(wsmap["resolution"].c_str()));
 
-					while( !objectList.empty() )
-					{
-						workspace->addwso(
-								objectList.begin()
-								);
-						objectList.pop_front();
-					}
-					break;
-
-				case "robot":
-
-
-
-					break;
-
-				case "obstacle":
-					//parsing configuration
-
-					mwsWso * newObject = new mwsWso;
-
-
-					if( workspace )
-						workspace->addwso( *newObject );
-					else
-						objectList.push_back( *newObject );
-					break;
-
-				default:
-					delete configReader;
-					return NULL;
-			}
-
-
-		}
-
+        
+        for( mws_scopeit listIterator = configList.begin();
+             listIterator != configList.end();
+             listIterator++ )
+        {
+            mws_attrmap amap = listIterator->second;
+//            cout<<"Name is "<<listIterator->first<<endl;
+            if (listIterator->first != "workspace")
+            {
+                //  cout<<"Name inside "<<listIterator->first<<endl;
+                
+                //parsing configuration
+                workspace->addWSO(new mwsWSO(listIterator->first, 
+                                             strtopos(amap["pos"]),
+                                             strtopos(amap["vel"]),
+                                             atoi (amap["radius"].c_str())));
+            }
+        }
+        cout <<"Done with for "<<endl;
 	return workspace;
 
-	}
+    }
 
 }
