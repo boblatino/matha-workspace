@@ -2,6 +2,7 @@
 #define __mwsDraw__
 
 #include <list>
+#include <vector>
 #include <mwsTypes.h>
 #include <mwsDrawable.h>
 
@@ -18,7 +19,7 @@ class mwsGraphicAdapter{
        int mainWinWidth;
        int mainWinLength;
        mwsGraphicAdapter();
-       void DrawPolygon(mws_posv shapeos,int gradius,float* colorsa);
+    void DrawPolygon(mws_posv shapeos, std::vector<int> dims,float* colorsa);
        void DrawCircle(mws_posv shapeos,int gradius,float* colorsa);
     public:
        static mwsGraphicAdapter *getInstance();

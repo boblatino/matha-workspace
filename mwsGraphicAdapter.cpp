@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <math.h>
+#include <vector>
 
 #ifdef WIN32
 #include <windows.h>
@@ -69,7 +70,7 @@ void mwsGraphicAdapter::draw(){
         if((*i)->getshape().getshape() == mwsCircle){
             DrawCircle((*i)->getpos(), (*i)->getradius(), (*i)->getcolor().getcolors());
         }else{
-            DrawPolygon((*i)->getpos(), (*i)->getradius(), (*i)->getcolor().getcolors());
+            DrawPolygon((*i)->getpos(), (*i)->getshape().getdims(), (*i)->getcolor().getcolors());
         }
     }
 
@@ -87,11 +88,12 @@ void mwsGraphicAdapter::display(){
     glutMainLoop();
 }
 
-void mwsGraphicAdapter::DrawPolygon(mws_posv shapeos,int gradius,float* colorsa){
+void mwsGraphicAdapter::DrawPolygon(mws_posv shapeos,mws_ldims dims,float* colorsa){
     glPushMatrix();
-    glTranslatef((float)(shapeos[0] - gradius)*2/mainWinWidth,(float)(shapeos[1] - gradius)*2/mainWinLength,0);
+    std::cout<<" Dims "<<dims[0]<<std::endl;
+    glTranslatef((float)(shapeos[0] - dims[0])*2/mainWinWidth,(float)(shapeos[1] - dims[1])*2/mainWinLength,0);
     glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,colorsa);
-    glRectf(0,0,(float) gradius*2/mainWinWidth,(float) gradius*2/mainWinLength);
+    glRectf(0,0,(float) dims[0]*2/mainWinWidth,(float) dims[1]*2/mainWinLength);
     glPopMatrix();
 }
 
