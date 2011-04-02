@@ -36,6 +36,24 @@ namespace mws
 
     }
 
+    static vector<int > spliter(string split,string ob){
+        string rsplit;
+        vector<int > data;
+        int last = -1;
+        for(int i = 0;i != -1;last = i){
+            i = split.find(ob);
+            if(i != -1){
+                rsplit = split.substr(0,i);
+                split = split.substr(i + 1,split.length()-1);
+                data.push_back(atoi(rsplit.c_str()));
+            }else{
+                data.push_back(atoi(split.c_str()));
+            }
+        
+        }
+        return data;
+    }
+
     static inline mws_posv strtopos (std::string gg)
     {
         std::string nums = gg.substr (gg.find("[")+1, gg.length()-2);
@@ -72,10 +90,18 @@ namespace mws
                 //  cout<<"Name inside "<<listIterator->first<<endl;
                 
                 //parsing configuration
+                vector<int > vcolor;
+                vcolor =  spliter(amap["color"],",");
+                mwscolors scolor(vcolor[0],vcolor[1],vcolor[2]);
+                //               mwsshapes awshape(atoi(amap["shape"]),);
                 workspace->addWSO(new mwsWSO(listIterator->first, 
                                              strtopos(amap["pos"]),
                                              strtopos(amap["vel"]),
-                                             atoi (amap["radius"].c_str())));
+                                             atoi (amap["radius"].c_str()),scolor,
+                                             mwsshapes ((mwsShapeEnum) atoi(amap["shape"].c_str()),
+                                                        spliter(amap["dims"], ",")))
+                                  );
+                cout<<" Split: "<<spliter(amap["dims"], ",")[0]<<endl;
             }
         }
         cout <<"Done with for "<<endl;
