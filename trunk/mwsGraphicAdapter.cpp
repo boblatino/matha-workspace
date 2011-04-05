@@ -30,7 +30,7 @@ mwsGraphicAdapter::mwsGraphicAdapter() {
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 }
 
-void mwsGraphicAdapter::mainWin(int width, int len,float wincolor[4],bool full=true) {
+void mwsGraphicAdapter::mainWin(int width, int len,float wincolor[4], mwsWorkspace *myws, bool full=true ) {
     mainWinWidth = width;
     mainWinLength = len;
     /* Draw window with this width and length */
@@ -45,6 +45,7 @@ void mwsGraphicAdapter::mainWin(int width, int len,float wincolor[4],bool full=t
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
+    ws = myws;
 }
 
 mwsGraphicAdapter *mwsGraphicAdapter::getInstance(){
@@ -77,6 +78,25 @@ void mwsGraphicAdapter::draw(){
     glutSwapBuffers();
 }
 
+///////////////////////////////////////////
+
+static void timerCallback(int useless) {
+    useless = 0;
+    mwsGraphicAdapter::getInstance()->refresh();
+    glutTimerFunc (100, timerCallback, 0);
+}
+
+void reshape(int w,int h){
+    glViewport(0,0,w,h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45.0,(float)w/(float)h,1.0,100.0);
+    gluLookAt(0,0,10,0,0,0,0,1,0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+
 void mwsGraphicAdapter::display(){
     glutDisplayFunc(mwsDrawStub);
     if(fullwin == true){
@@ -84,13 +104,12 @@ void mwsGraphicAdapter::display(){
     }
     glutReshapeFunc(reshape);
     glutKeyboardFunc(keya);
-
+    glutTimerFunc (100, timerCallback, 0);
     glutMainLoop();
 }
 
 void mwsGraphicAdapter::DrawPolygon(mws_posv shapeos,mws_ldims dims,float* colorsa){
     glPushMatrix();
-    std::cout<<" Dims "<<dims[0]<<std::endl;
     glTranslatef((float)(shapeos[0] - dims[0])*2/mainWinWidth,(float)(shapeos[1] - dims[1])*2/mainWinLength,0);
     glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,colorsa);
     glRectf(0,0,(float) dims[0]*2/mainWinWidth,(float) dims[1]*2/mainWinLength);
@@ -108,25 +127,14 @@ void mwsGraphicAdapter::DrawCircle(mws_posv shapeos,int gradius,float* colorsa){
 }
 
 void mwsGraphicAdapter::refresh(){
-    //draw();
+    ws->step();
+    draw();
 }
 
 ///////////////////////////////////////////
 
 void mwsDrawStub() {
     mwsGraphicAdapter::getInstance()->draw();
-}
-
-///////////////////////////////////////////
-
-void reshape(int w,int h){
-    glViewport(0,0,w,h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0,(float)w/(float)h,1.0,100.0);
-    gluLookAt(0,0,10,0,0,0,0,1,0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 }
 
 ///////////////////////////////////////////
