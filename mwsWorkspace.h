@@ -4,7 +4,6 @@
 #include <mwsTypes.h>
 #include <mwsWSO.h>
 #include <map>
-#include <mwsGraphicAdapter.h>
 
 typedef std::map<mws_string, mwsWSO *> mws_omap;
 
@@ -25,6 +24,8 @@ class mwsWorkspace
     void go();
 
     void stop(){};
+
+    void step();
 };
 
 #endif

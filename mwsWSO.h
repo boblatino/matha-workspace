@@ -3,11 +3,11 @@
 
 #include <mwsTypes.h>
 #include <mwsDrawable.h>
+#include <iostream>
 
 class mwsWSO : public mwsDrawable
 {
   private:
-    mws_posv pos;
     mws_posv vel;
     mws_string name;
 
@@ -17,10 +17,10 @@ class mwsWSO : public mwsDrawable
            mwscolors colorf=mwscolors(),
            mwsshapes shapeint=mwsshapes()) :
         mwsDrawable (colorf, shapeint, radius, ps),
-        pos(ps), vel(vl), name (nm)  {};
+        vel(vl), name (nm)  {
+        std::cout<<"Name is "<<name<<std::endl;};
     virtual ~mwsWSO(){};
     inline mws_string& getname() { return name;}
-    inline mws_posv& getpos() {return pos;}
     inline mws_posv& getvel() {return vel;}
     
 };
