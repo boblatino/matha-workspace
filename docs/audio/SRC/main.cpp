@@ -29,9 +29,10 @@ using namespace std;
 
 struct arginf
 {
-	char* ifilename;
+	char *ifilename;
 	std::map<char*,int> ofilename;
-	char* cfilename;
+	char *cfilename;
+	char *format;
 //	int multio; //it's bool			WHAT IS THIS??
 	int changevoice; //it's bool
 	int inputvoice;
@@ -50,9 +51,12 @@ int main( int argc, char **argv )
 	int opt = -1;
 	int argop = 0;
 	int argindex = 0;
+	int ofncount = 0;
+	int fmtcount = 0;
+	map<char *, int>::iterator it;
 
 	arginfo.ifilename = NULL;
-//	arginfo.ofilename = NULL;
+	arginfo.format = NULL;
 	arginfo.cfilename = NULL;
 //	arginfo.multio = FALSE;
 	arginfo.changevoice = FALSE;
@@ -62,18 +66,19 @@ int main( int argc, char **argv )
 	arginfo.style = SAME;
 
 	struct option myarg[] = {
-		{"filename",required_argument,0,'i'},
-		{"outputfile",required_argument,0,'o'},
-		{"configfile",required_argument,0,'c'},
-		{"changevoice",required_argument,0,'v'},
-		{"inputvoice",required_argument,0,'f'},
-		{"outputvoice",required_argument,0,'m'},
-		{"tempo",required_argument,0,'t'},
-		{"style",required_argument,0,'s'},
-		{0,0,0,0}
+		{ "filename", required_argument, 0, 'i' },
+		{ "outputfile", required_argument, 0, 'o' },
+		{ "format", required_argument, 0, 'f' },
+		{ "configfile", required_argument, 0, 'c' },
+		{ "changevoice", required_argument, 0, 'v' },
+		{ "inputvoice", required_argument, 0, 'z' },
+		{ "outputvoice", required_argument, 0, 'm' },
+		{ "tempo", required_argument, 0, 't' },
+		{ "style", required_argument, 0, 's' },
+		{ 0, 0, 0, 0 }
 	};
 
-	while((argop = getopt_long(argc,argv,"i:o:c:v:f:m:t:s:",myarg,&argindex)) != -1)
+	while((argop = getopt_long(argc,argv,"i:o:f:c:v:z:m:t:s:",myarg,&argindex)) != -1)
 	{
 		switch(argop)
 		{
@@ -86,9 +91,24 @@ int main( int argc, char **argv )
 
 			case 'o':
 				if(optarg != NULL)
+				{
+					ofncount++;
 					arginfo.ofilename.insert(pair<char*,int>(optarg,DEFAULT_FORMAT));
+				}
 				else
 					printf("bad option for argument --outputfile -o\n");
+				break;
+
+			case 'f':
+				if( fmtcount >= ofncount )
+					cout << "Out of order arguments (Format without an output file). Please specify the output file first." << endl;
+				else
+				{
+					it = arginfo.ofilename.begin();
+					for( int i = 0; i < fmtcount; it++, i++);
+					it->second = formatof( optarg );
+					fmtcount++;
+				}
 				break;
 
 			case 'c':
@@ -117,14 +137,14 @@ int main( int argc, char **argv )
 				}
 				break;
 
-			case 'f':
+			case 'z':
 				if(optarg != NULL)
 				{
 					opt = optionassign(optarg);
 					if((opt == MALE) || (opt == FEMALE) || (opt == MIXED) || (opt == AUTODETECT))
 						arginfo.inputvoice = opt;
 					else
-						printf("bad option for argument --inputvoice -f\n");
+						printf("bad option for argument --inputvoice -z\n");
 				}
 				break;
 
@@ -166,14 +186,19 @@ int main( int argc, char **argv )
 				break;
 
 			default:
-				printf("none of the arguments\n");
+				cout << "Unknown argument: " << argop << ' ' << optarg << endl;
 		}
 	}
+
 	cout << "Input filename: " << arginfo.ifilename << endl;
 	cout << "Configuration file: " << arginfo.cfilename << endl;
-	for (map<char*,int>::iterator it =arginfo.ofilename.begin(); it!= arginfo.ofilename.end(); it++)
-		cout << "Outfile name: " << it->first << "\t->\t" << it->second << endl;
-
+	for( it =arginfo.ofilename.begin(); it!= arginfo.ofilename.end(); it++)
+		cout << "Outfile name: " << it->first << "\tFormat: " << it->second << endl;
+	cout << "Changevoice=" << arginfo.changevoice << endl;
+	cout << "Inputvoice=" << arginfo.inputvoice << endl;
+	cout << "Outputvoice=" << arginfo.outputvoice << endl;
+	cout << "Tempo=" << arginfo.tempo << endl;
+	cout << "Style=" << arginfo.style << endl;
 }
 
 int optionassign(char* option)
@@ -247,7 +272,7 @@ void configreader(char* filename)
 		}
 		else
 		{
-			printf("the bad option for argument --inputvoice -f\n");
+			printf("the bad option for argument --inputvoice -z\n");
 		}
 	}
 	if((char* ) ahmed.getAttrib("file","outputvoice").empty())
