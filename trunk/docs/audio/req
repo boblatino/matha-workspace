@@ -1,0 +1,23 @@
+The app must:
+1. Remove background static.
+2. Remove noise, clicks & pops.
+3. Make the voice crisp & smooth
+4. Even out the loud and quiet parts of the voice (compress, normalize)
+5. Generally improve the quality of the voice to sound nicer to the ear, as much as possible.
+6. To the maximum extent possible, make the voice sound like a different person to the original
+7. The app includes functionality to speed up or slow down the audio, yet keeping the quality and pitch the same as much as possible.
+
+
+There should be optional input parameters when running the app which will give it some instructions on how to process that particular audio.
+
+For example, sometimes it is important to be able to select whether the voice should be changed or not, as sometimes it needs to sound like the original (only made clearer and with noise removed) and sometimes it needs to sound different to the original.
+
+Input filename: filename
+Output filename: filename1, format1, filename2, format2, etc. (output in different formats at the same time is possible, e.g. high and low quality)
+Change Voice: yes, no (leave blank for no)
+Input Voice: male, female, mixed, autodetect (leave blank for autodetect)
+Output Voice: male, female, same as input (leave blank for same)
+Tempo: same, slow down, amount, speed up, amount, autodetect (leave blank for same)
+Voice Style: same, soft and deep, excitable (exagerrated), (leave blank for same)
+
+ 
