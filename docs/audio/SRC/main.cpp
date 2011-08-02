@@ -23,9 +23,9 @@ using namespace std;
 #define SOFT 8
 #define EXCITABLE 9
 
-#define DEFAULT_FORMAT	0
-#define FORMAT_MP3	0
-#define FORMAT_OGG	1
+#define DEFAULT_FORMAT  0
+#define FORMAT_MP3  0
+#define FORMAT_OGG  1
 
 struct arginf
 {
@@ -33,13 +33,25 @@ struct arginf
 	std::map<char*,int> ofilename;
 	char *cfilename;
 	char *format;
-//	int multio; //it's bool			WHAT IS THIS??
-	int changevoice; //it's bool
+	int changevoice;			 //it's bool
 	int inputvoice;
 	int outputvoice;
 	int tempo;
 	int style;
 }arginfo;
+
+struct arginf_mod
+{
+	bool ifilename;
+	bool ofilename;
+	bool cfilename;
+	bool format;
+	bool changevoice;
+	bool inputvoice;
+	bool outputvoice;
+	bool tempo;
+	bool style;
+} argmod;
 
 void configreader( char *filename );
 int optionassign( char *option );
@@ -58,14 +70,23 @@ int main( int argc, char **argv )
 	arginfo.ifilename = NULL;
 	arginfo.format = NULL;
 	arginfo.cfilename = NULL;
-//	arginfo.multio = FALSE;
 	arginfo.changevoice = FALSE;
 	arginfo.inputvoice = AUTODETECT;
 	arginfo.outputvoice = SAME;
 	arginfo.tempo = SAME;
 	arginfo.style = SAME;
 
-	struct option myarg[] = {
+	arginfo.ifilename = false;
+	arginfo.format = false;
+	arginfo.cfilename = false;
+	arginfo.changevoice = false;
+	arginfo.inputvoice = false;
+	arginfo.outputvoice = false;
+	arginfo.tempo = false;
+	arginfo.style = false;
+
+	struct option myarg[] =
+	{
 		{ "filename", required_argument, 0, 'i' },
 		{ "outputfile", required_argument, 0, 'o' },
 		{ "format", required_argument, 0, 'f' },
@@ -83,8 +104,11 @@ int main( int argc, char **argv )
 		switch(argop)
 		{
 			case 'i':
-                		if(optarg != NULL)
-                			arginfo.ifilename = optarg;
+				if(optarg != NULL)
+				{
+					arginfo.ifilename = optarg;
+					argmod.ifilename = true;
+				}
 				else
 					printf("bad option for argument --filename -i\n");
 				break;
@@ -94,6 +118,7 @@ int main( int argc, char **argv )
 				{
 					ofncount++;
 					arginfo.ofilename.insert(pair<char*,int>(optarg,DEFAULT_FORMAT));
+					argmod.ofilename = true;
 				}
 				else
 					printf("bad option for argument --outputfile -o\n");
@@ -115,6 +140,7 @@ int main( int argc, char **argv )
 				if(optarg != NULL)
 				{
 					arginfo.cfilename = optarg;
+					argmod.cfilename = true;
 					configreader(arginfo.cfilename);
 				}
 				else
@@ -126,14 +152,16 @@ int main( int argc, char **argv )
 				{
 					if((strcmp(optarg,"yes") == 0) || (strcmp(optarg,"y") == 0))
 					{
+						argmod.changevoice = true;
 						arginfo.changevoice = TRUE;
 					}
-					else
+					else if((strcmp(optarg,"no") == 0) || (strcmp(optarg,"n") == 0))
 					{
-						if((strcmp(optarg,"no") != 0) && (strcmp(optarg,"n") != 0))
-							printf("bad option for argument --changevoice -v\n");
+						argmod.changevoice = true;
 						arginfo.changevoice = FALSE;
 					}
+					else
+						cout << "Unknown option '" << optarg << "' for changevoice." << endl;
 				}
 				break;
 
@@ -142,9 +170,13 @@ int main( int argc, char **argv )
 				{
 					opt = optionassign(optarg);
 					if((opt == MALE) || (opt == FEMALE) || (opt == MIXED) || (opt == AUTODETECT))
+					{
+						argmod.inputvoice = true;
 						arginfo.inputvoice = opt;
+					}
 					else
-						printf("bad option for argument --inputvoice -z\n");
+						cout << "Unknown option '" << optarg << "' for inputvoice." << endl;
+
 				}
 				break;
 
@@ -153,10 +185,13 @@ int main( int argc, char **argv )
 				{
 					opt = optionassign(optarg);
 					if((opt == MALE) || (opt == FEMALE) || (opt == MIXED) || (opt == AUTODETECT))
+					{
+						argmod.outputvoice = true;
 						arginfo.outputvoice = opt;
+					}
 					else
-						printf("bad option for argument --outputvoice -m\n");
-                		}
+						cout << "Unknown option '" << optarg << "' for outputvoice." << endl;
+				}
 				break;
 
 			case 't':
@@ -164,9 +199,12 @@ int main( int argc, char **argv )
 				{
 					opt = optionassign(optarg);
 					if((opt == SAME) || (opt == SLOWDOWN) || (opt == SPEEDUP) || (opt == AUTODETECT))
-						arginfo.tempo = optionassign(optarg);
+					{
+						argmod.tempo = true;
+						arginfo.tempo = opt;
+					}
 					else
-						printf("bad option for argument --tempo -t\n");
+						cout << "Unknown option '" << optarg << "' for tempo." << endl;
 				}
 				break;
 
@@ -175,9 +213,12 @@ int main( int argc, char **argv )
 				{
 					opt = optionassign(optarg);
 					if((opt == SAME) || (opt == SOFT) || (opt == EXCITABLE))
-						arginfo.style = optionassign(optarg);
+					{
+						argmod.style = true;
+						arginfo.style = opt;
+					}
 					else
-						printf("bad option for argument --style -s\n");
+						cout << "Unknown option '" << optarg << "' for style." << endl;
 				}
 				break;
 
@@ -201,126 +242,118 @@ int main( int argc, char **argv )
 	cout << "Style=" << arginfo.style << endl;
 }
 
+
 int optionassign(char* option)
 {
-	if(strcmp(optarg,"male") == 0){
+	if(strcmp(option,"male") == 0)
+	{
 		return MALE;
 	}
-	if(strcmp(optarg,"female") == 0){
+	if(strcmp(option,"female") == 0)
+	{
 		return FEMALE;
 	}
-	if(strcmp(optarg,"mixed") == 0){
+	if(strcmp(option,"mixed") == 0)
+	{
 		return MIXED;
 	}
-	if(strcmp(optarg,"same") == 0){
+	if(strcmp(option,"same") == 0)
+	{
 		return SAME;
 	}
-	if(strcmp(optarg,"autodetect") == 0){
+	if(strcmp(option,"autodetect") == 0)
+	{
 		return AUTODETECT;
 	}
-	if(strcmp(optarg,"slowdown") == 0){
+	if(strcmp(option,"slowdown") == 0)
+	{
 		return SLOWDOWN;
 	}
-	if(strcmp(optarg,"speedup") == 0){
+	if(strcmp(option,"speedup") == 0)
+	{
 		return SPEEDUP;
 	}
-	if(strcmp(optarg,"soft") == 0){
+	if(strcmp(option,"soft") == 0)
+	{
 		return SOFT;
 	}
-	if(strcmp(optarg,"excitable") == 0){
+	if(strcmp(option,"excitable") == 0)
+	{
 		return EXCITABLE;
 	}
 	return -1;
 }
 
+
 void configreader(char* filename)
 {
 	string filenames;
 	filenames = filename;
-	mwsConfigReader ahmed(filenames);
+	mwsConfigReader config(filenames);
 
-	if( arginfo.ifilename == NULL )
-		arginfo.ifilename = (char* ) ahmed.getAttrib("file","filename").c_str();
-	if( arginfo.ofilename.empty() )
-		formatDistribute( (char *)ahmed.getAttrib("file","outputfile").c_str(),(char *)ahmed.getAttrib( "file", "format").c_str());
-	if(ahmed.getAttrib("file","changevoice").empty())
+	if( !argmod.ifilename )
+		arginfo.ifilename = (char* ) config.getAttrib("file","filename").c_str();
+
+	if( !argmod.ofilename )
+		formatDistribute( (char *)config.getAttrib("file","outputfile").c_str(),(char *)config.getAttrib( "file", "format").c_str());
+
+	if( !argmod.changevoice && !config.getAttrib("file","changevoice").empty() )
 	{
-		printf("the bad option for argument --changevoice -v\n");
-	}
-	else
-	{
-		if((strcmp(ahmed.getAttrib("file","changevoice").c_str(),"yes") == 0) || (strcmp(ahmed.getAttrib("file","changevoice").c_str(),"y") == 0))
-		{
+		if((strcmp(config.getAttrib("file","changevoice").c_str(),"yes") == 0) || (strcmp(config.getAttrib("file","changevoice").c_str(),"y") == 0))
 			arginfo.changevoice = TRUE;
-		}
-		else
-		{
-			if((strcmp(ahmed.getAttrib("file","changevoice").c_str(),"no") != 0) && (strcmp(ahmed.getAttrib("file","changevoice").c_str(),"n") != 0))
-			{
-				printf("the bad option for argument --changevoice -v\n");
-			}
+		else if((strcmp(config.getAttrib("file","changevoice").c_str(),"no") == 0) || (strcmp(config.getAttrib("file","changevoice").c_str(),"n") == 0))
 			arginfo.changevoice = FALSE;
-		}
+		else
+			cout << "Error parsing configuration file at 'changevoice:" << config.getAttrib("file","changevoice").c_str() << "'" << endl;
 	}
+
 	int opt = -1;
-	if((char* ) ahmed.getAttrib("file","inputvoice").empty())
+	if( !argmod.inputvoice && !config.getAttrib("file","inputvoice").empty() )
 	{
-		opt = optionassign((char* ) ahmed.getAttrib("file","inputvoice").c_str());
+		opt = optionassign((char* ) config.getAttrib("file","inputvoice").c_str());
 		if((opt == MALE) || (opt == FEMALE) || (opt == MIXED) || (opt == AUTODETECT))
-		{
 			arginfo.inputvoice = opt;
-		}
 		else
-		{
-			printf("the bad option for argument --inputvoice -z\n");
-		}
+			cout << "Error parsing configuration file at 'inputvoice:" << config.getAttrib("file","inputvoice").c_str() << "'" << endl;
 	}
-	if((char* ) ahmed.getAttrib("file","outputvoice").empty())
+
+	if( !argmod.outputvoice && !config.getAttrib("file","outputvoice").empty() )
 	{
-		opt = optionassign((char* ) ahmed.getAttrib("file","outputvoice").c_str());
+		opt = optionassign((char* ) config.getAttrib("file","outputvoice").c_str());
 		if((opt == MALE) || (opt == FEMALE) || (opt == MIXED) || (opt == AUTODETECT))
-		{
 			arginfo.outputvoice = opt;
-		}
 		else
-		{
-			printf("the bad option for argument --outputvoice -m\n");
-		}
+			cout << "Error parsing configuration file at 'outputvoice:" << config.getAttrib("file","outputvoice").c_str() << "'" << endl;
 	}
-	if((char* ) ahmed.getAttrib("file","tempo").empty())
+
+	if( !argmod.tempo && !config.getAttrib("file","tempo").empty() )
 	{
-		opt = optionassign((char* ) ahmed.getAttrib("file","tempo").c_str());
+		opt = optionassign((char* ) config.getAttrib("file","tempo").c_str());
 		if((opt == SAME) || (opt == SLOWDOWN) || (opt == SPEEDUP) || (opt == AUTODETECT))
-		{
 			arginfo.tempo = opt;
-		}
 		else
-		{
-			printf("the bad option for argument --tempo -t\n");
-		}
+			cout << "Error parsing configuration file at 'tempo:" << config.getAttrib("file","tempo").c_str() << "'" << endl;
 	}
-	if((char* ) ahmed.getAttrib("file","style").empty())
+
+	if( !argmod.style && !config.getAttrib("file","style").empty() )
 	{
-		opt = optionassign((char* ) ahmed.getAttrib("file","style").c_str());
+		opt = optionassign((char* ) config.getAttrib("file","style").c_str());
 		if((opt == SAME) || (opt == SOFT) || (opt == EXCITABLE))
-		{
 			arginfo.style = opt;
-		}
 		else
-		{
-			printf("the bad option for argument --style -s\n");
-		}
+			cout << "Error parsing configuration file at 'style:" << config.getAttrib("file","style").c_str() << "'" << endl;
 	}
 }
 
+
 void formatDistribute( char *filenames, char *formats )
 {
-	char *temp; 
+	char *temp;
 
 	if( !filenames )
 		return;
 	temp = strtok( filenames, "," );
-	
+
 	arginfo.ofilename.insert( pair<char *, int>( temp, DEFAULT_FORMAT ) );
 	while( temp = strtok( NULL, "," ) )
 	{
@@ -353,6 +386,7 @@ void formatDistribute( char *filenames, char *formats )
 
 	return;
 }
+
 
 int formatof( char * format )
 {
