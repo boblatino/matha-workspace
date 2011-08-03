@@ -11,7 +11,7 @@ int main()
 	sndconv1.makeogg( (char *) "out.ogg" );
 	sndconv1.makemp3( (char *) "out.mp3", highqal );
 
-	while( buffer = sndconv1.popstream() )
+/*	while( buffer = sndconv1.popstream() )
 	{
 		sndconv1.pushstream( buffer );
 		if(sndconv1.makefiles() == false)
@@ -20,5 +20,10 @@ int main()
 			break;
 		}
 	}
+*/
+
+	while( buffer = sndconv1.popstream() )
+		sndconv1.pushstream( buffer, 1024 );
+
 	return 0;
 }
