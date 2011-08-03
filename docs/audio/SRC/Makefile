@@ -16,4 +16,4 @@ test_sndconv: test_sndconv.o sndconv.o
 	${CXX} ${CXX_CFLAGS} -c $< -o $@
 
 clean:
-	$(RM) *.o main test_sndconv
+	$(RM) *.o main test_sndconv out.{wav,ogg,mp3}

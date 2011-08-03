@@ -21,7 +21,7 @@ class sndconv
 	public :
 		sndconv(char* filepath,size_t buffersize);
 		char* popstream();
-		void pushstream( char * );
+		void pushstream( char *, size_t );
 		void makemp3(char* outfile,int qualityint);
 		void makewav(char* outfile);
 		void makeogg(char* outfile);

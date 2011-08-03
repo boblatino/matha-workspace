@@ -32,13 +32,28 @@ sndconv::sndconv(char* filepath = NULL,size_t bsize = 0)
 	}
 }
 
-void sndconv::pushstream( char *buffer )
+void sndconv::pushstream( char *buffer, size_t buffsiz )
 {
+	if( (int)( sndflst.size() ) != 0 )
+	{
+		for(sndfls::const_iterator lii = sndflst.begin();lii != sndflst.end();lii++)
+		{
+			sf_write_short( *lii, (short *)buffer, buffsiz/sizeof(short) );
+		}
+	}
 
-
-
-
-
+	if( (int)( sndmp3flst.size() ) != 0 )
+	{
+		short int * s_mv = (short int *) buffer;
+		for(mp3hand::const_iterator mp3ah = sndmp3flst.begin();mp3ah != sndmp3flst.end();mp3ah++)
+		{
+			write = lame_encode_buffer( lame, s_mv, s_mv, buffsiz/sizeof(short int), mp3_buffer, buffersize );
+			if( write < 0 )
+				cerr << "lame_encode_buffer(): " << write << endl;
+			else
+				fwrite(mp3_buffer, 1, write, *mp3ah);
+		}
+	}
 }
 
 char* sndconv::popstream()
