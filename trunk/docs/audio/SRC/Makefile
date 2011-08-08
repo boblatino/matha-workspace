@@ -1,10 +1,10 @@
 CXX_LDFLAGS += -lmp3lame -lmpg123 -lsndfile
 
 
-all: main
+all: audioenh
 
 
-main: main.o mwsConfigReader.o sndconv.o
+audioenh: main.o mwsConfigReader.o sndconv.o
 	${CXX} ${CXX_LDFLAGS} $^ -o $@
 
 
@@ -16,4 +16,4 @@ test_sndconv: test_sndconv.o sndconv.o
 	${CXX} ${CXX_CFLAGS} -c $< -o $@
 
 clean:
-	$(RM) *.o main test_sndconv out.{wav,ogg,mp3}
+	$(RM) *.o audioenh test_sndconv out.{wav,ogg,mp3}
