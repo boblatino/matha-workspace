@@ -67,6 +67,7 @@ Matrix Matrix::inverse()
 	complex<double> det = determinant();
 	if( isnan( det.real() ) )
 	{
+		cerr << "Error: inverting a singular matrix." << endl;
 		Matrix ret;
 		return ret;
 	}
@@ -125,9 +126,26 @@ complex<double> Matrix::determinant()
 	return det;
 }
 
+/* reshape(). */
+Matrix Matrix::reshape( size_t row, size_t col )
+{
+	if( row * col != Ncolumns * Nrows )
+	{
+		cerr << "Error: Dimensions mismatch for reshape." << endl;
+		Matrix ret;
+		return ret;
+	}
 
+	complex<double> dat[ row * col ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			dat[ i*Nrows + j ] = data[ i ][ j ];
 
-/* size(). */
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+/* size(). */ 
 void Matrix::size( size_t *cols, size_t *rows )
 {
 	*cols = Ncolumns;
@@ -211,23 +229,104 @@ Matrix Matrix::getSubMatrix( size_t sCol, size_t eCol, size_t sRow, size_t eRow 
 
 int Matrix::addRow( double *row_data, size_t size )
 {
-	if( size != Ncolumns )
+	if( initialized && size != Ncolumns )
 	{
 		cerr << "Row size mismatch." << endl;
 		return -1;
 	}
 
 	for( size_t i = 0; i < size; i++ )
+		data[ i ].insert( pair< size_t, complex<double> >( Nrows, complex<double>( *( row_data + i ), 0 ) ) );
+
+	if( !initialized )
 	{
-		data[ i ].insert( pair< size_t, complex<double> >( i, complex<double>( *( row_data + i ), 0 ) ) );
-		data[ i ][ Nrows ] = complex<double>( *( row_data + i ), 0 ); 				//Why?
+		initialized = true;
+		Nrows = 1;
+		Ncolumns = size;
 	}
-	Nrows++;
+	else
+		Nrows++;
+
 	return 0;
 }
 
 int Matrix::addRow( std::complex<double> *row_data, size_t size )
 {
+	if( initialized && size != Ncolumns )
+	{
+		cerr << "Row size mismatch." << endl;
+		return -1;
+	}
+
+	for( size_t i = 0; i < size; i++ )
+		data[ i ].insert( pair< size_t, complex<double> >( Nrows, *( row_data + i ) ) );
+
+	if( !initialized )
+	{
+		initialized = true;
+		Nrows = 1;
+		Ncolumns = size;
+	}
+	else
+		Nrows++;
+
+	return 0;
+}
+
+int Matrix::addColumn( double *col_data, size_t size )
+{
+	if( initialized && size != Nrows )
+	{
+		cerr << "Column size mismatch." << endl;
+		return -1;
+	}
+
+	map< size_t, complex<double> > temp ;
+	for( size_t i = 0; i < size; i++ )
+		temp.insert( pair< size_t, complex<double> >( i, complex<double>(*( col_data + i ), 0 ) ) );
+
+	data.insert( pair< size_t, map< size_t, complex<double> > >( Ncolumns, temp ) );
+
+	if( !initialized )
+	{
+		initialized = true;
+		Nrows = size;
+		Ncolumns = 1;
+	}
+	else
+		Ncolumns++;
+
+	return 0;
+}
+
+int Matrix::addColumn( std::complex<double> *col_data, size_t size )
+{
+	if( initialized && size != Nrows )
+	{
+		cerr << "Column size mismatch." << endl;
+		return -1;
+	}
+
+	map< size_t, complex<double> > temp ;
+	for( size_t i = 0; i < size; i++ )
+		temp.insert( pair< size_t, complex<double> >( i, *( col_data + i ) ) );
+
+	data.insert( pair< size_t, map< size_t, complex<double> > >( Ncolumns, temp ) );
+
+	if( !initialized )
+	{
+		initialized = true;
+		Nrows = size;
+		Ncolumns = 1;
+	}
+	else
+		Ncolumns++;
+
+	return 0;
+}
+
+int Matrix::insertRow( double *row_data, size_t size, size_t position )
+{
 	if( size != Ncolumns )
 	{
 		cerr << "Row size mismatch." << endl;
@@ -235,77 +334,86 @@ int Matrix::addRow( std::complex<double> *row_data, size_t size )
 	}
 
 	for( size_t i = 0; i < size; i++ )
-	{
-		data[ i ].insert( pair< size_t, complex<double> >( i, *( row_data + i ) ) );
-		data[ i ][ Nrows ] = *( row_data + i );  						//Why?
-	}
+		data[ i ].insert( pair< size_t, complex<double> >( Nrows, data[ i ][ Nrows - 1 ] ) );
+
+	for( size_t i = Nrows - 1; i > position; i-- )
+		for( size_t j = 0; j < size; j++ )
+			data[ j ][ i ] = data[ j ][ i - 1];
+
+	for( size_t i = 0; i < size; i++ )
+		data[ i ][ position ] = complex<double>( *( row_data + i ), 0 );
+
 	Nrows++;
 	return 0;
-}
-
-int Matrix::addColumn( double *col_data, size_t size )
-{
-	if( size != Nrows )
-	{
-		cerr << "Column size mismatch." << endl;
-		return -1;
-	}
-
-	map< size_t, complex<double> > temp ;
-	for( size_t i = 0; i < size; i++ )
-	{
-		temp.insert( pair< size_t, complex<double> >( i, complex<double>(*( col_data + i ), 0 ) ) );
-	}
-	data.insert( pair< size_t, map< size_t, complex<double> > >( Ncolumns++, temp ) );
-	return 0;
-}
-
-int Matrix::addColumn( std::complex<double> *col_data, size_t size )
-{
-	if( size != Nrows )
-	{
-		cerr << "Column size mismatch." << endl;
-		return -1;
-	}
-
-	map< size_t, complex<double> > temp ;
-	for( size_t i = 0; i < size; i++ )
-	{
-		temp.insert( pair< size_t, complex<double> >( i, *( col_data + i ) ) );
-	}
-	data.insert( pair< size_t, map< size_t, complex<double> > >( Ncolumns++, temp ) );
-	return 0;
-}
-
-int Matrix::insertRow( double *row_data, size_t size, size_t position )
-{
-	/* TODO */
-
 
 	return 0;
 }
 
 int Matrix::insertRow( std::complex<double> *row_data, size_t size, size_t position )
 {
-	/* TODO */
+	if( size != Ncolumns )
+	{
+		cerr << "Row size mismatch." << endl;
+		return -1;
+	}
 
+	for( size_t i = 0; i < size; i++ )
+		data[ i ].insert( pair< size_t, complex<double> >( Nrows, data[ i ][ Nrows - 1 ] ) );
 
+	for( size_t i = Nrows - 1; i > position; i-- )
+		for( size_t j = 0; j < size; j++ )
+			data[ j ][ i ] = data[ j ][ i - 1];
+
+	for( size_t i = 0; i < size; i++ )
+		data[ i ][ position ] = *( row_data + i );
+
+	Nrows++;
 	return 0;
 }
 
 int Matrix::insertColumn( double *col_data, size_t size, size_t position )
 {
-	/* TODO */
+	if( size != Nrows )
+	{
+		cerr << "Column size mismatch." << endl;
+		return -1;
+	}
 
+	map< size_t, complex<double> > temp ;
+	for( size_t i = 0; i < size; i++ )
+		temp.insert( pair< size_t, complex<double> >( i, data[ Ncolumns - 1 ][ i ] ) );
+	data.insert( pair< size_t, map< size_t, complex<double> > >( Ncolumns, temp ) );
 
+	for( size_t i = Ncolumns - 1; i > position; i-- )
+		data[ i ] = data[ i - 1];
+
+	for( size_t i = 0; i < size; i++ )
+		data[ position ][ i ] = complex<double>( *(col_data + i ), 0 );
+
+	Ncolumns++;
 	return 0;
 }
 
 int Matrix::insertColumn( std::complex<double> *col_data, size_t size, size_t position )
 {
-	/* TODO */
+	if( size != Nrows )
+	{
+		cerr << "Column size mismatch." << endl;
+		return -1;
+	}
 
+	map< size_t, complex<double> > temp ;
+	for( size_t i = 0; i < size; i++ )
+		temp.insert( pair< size_t, complex<double> >( i, data[ Ncolumns - 1 ][ i ] ) );
+	data.insert( pair< size_t, map< size_t, complex<double> > >( Ncolumns, temp ) );
 
+	for( size_t i = Ncolumns - 1; i > position; i-- )
+		data[ i ] = data[ i - 1];
+
+	for( size_t i = 0; i < size; i++ )
+		data[ position ][ i ] = *(col_data + i );
+
+	Ncolumns++;
 	return 0;
 }
 
@@ -481,14 +589,257 @@ Matrix Matrix::operator- ( Matrix Mat2 )
 	return ret;
 }
 
+/* Operator ==: comparing to a matrix. */
+Matrix Matrix::operator== ( Matrix Mat2 )
+{
+	if( this->isempty() || Mat2.isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
+	{
+		cerr << "Error comparing matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ this->Nrows * this->Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			complex<double> t1, t2;
+			this->getElement( &t1, i, j );
+			Mat2.getElement( &t2, i, j );
+			complex_data[ i * Nrows + j] = t1 == t2;
+		}
+
+	Matrix ret( complex_data, this->Ncolumns, this-> Nrows );
+	return ret;
+}
+
+/* Operator ==: Scalar comparison (complex). */
+Matrix Matrix::operator== ( complex<double> value )
+{
+	if( isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ] == value;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator ==: Scalar comparison (double). */
+Matrix Matrix::operator== ( double value )
+{
+	return *this == complex<double>( value, 0 );
+}
+
+/* Operator !=: comparing to a matrix. */
+Matrix Matrix::operator!= ( Matrix Mat2 )
+{
+	if( this->isempty() || Mat2.isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
+	{
+		cerr << "Error comparing matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ this->Nrows * this->Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			complex<double> t1, t2;
+			this->getElement( &t1, i, j );
+			Mat2.getElement( &t2, i, j );
+			complex_data[ i * Nrows + j] = t1 != t2;
+		}
+
+	Matrix ret( complex_data, this->Ncolumns, this-> Nrows );
+	return ret;
+}
+
+/* Operator !=: Scalar comparison (complex). */
+Matrix Matrix::operator!= ( complex<double> value )
+{
+	if( isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ] != value;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator !=: Scalar comparison (double). */
+Matrix Matrix::operator!= ( double value )
+{
+	return *this != complex<double>( value, 0 );
+}
+
+
+/* Operator >: comparing to a matrix. */
+Matrix Matrix::operator> ( Matrix Mat2 )
+{
+	if( this->isempty() || Mat2.isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
+	{
+		cerr << "Error comparing matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ this->Nrows * this->Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			complex<double> t1, t2;
+			this->getElement( &t1, i, j );
+			Mat2.getElement( &t2, i, j );
+			complex_data[ i * Nrows + j] = t1.real() > t2.real();
+		}
+
+	Matrix ret( complex_data, this->Ncolumns, this-> Nrows );
+	return ret;
+}
+
+/* Operator >: Scalar comparison (double). */
+Matrix Matrix::operator> ( double value )
+{
+	if( isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ].real() > value;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator >: Scalar comparison (complex). */
+Matrix Matrix::operator> ( complex<double> value )
+{
+	return *this > value.real() ;
+}
+
+/* Operator <: comparing to a matrix. */
+Matrix Matrix::operator< ( Matrix Mat2 )
+{
+	if( this->isempty() || Mat2.isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
+	{
+		cerr << "Error comparing matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ this->Nrows * this->Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			complex<double> t1, t2;
+			this->getElement( &t1, i, j );
+			Mat2.getElement( &t2, i, j );
+			complex_data[ i * Nrows + j] = t1.real() < t2.real();
+		}
+
+	Matrix ret( complex_data, this->Ncolumns, this-> Nrows );
+	return ret;
+}
+
+/* Operator <: Scalar comparison (double). */
+Matrix Matrix::operator< ( double value )
+{
+	if( isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ].real() < value;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator <: Scalar comparison (complex). */
+Matrix Matrix::operator< ( complex<double> value )
+{
+	return *this < value.real() ;
+}
+
+
+
+
 /* Operator *: Matrix multiplication. */
 Matrix Matrix::operator* ( Matrix Mat2 )
 {
-	/* TODO */
-	Matrix ret;
+	size_t Ncolumns2, Nrows2;
+
+	Mat2.size( &Ncolumns2, &Nrows2 );
+	if( this -> Ncolumns != Nrows2 )
+	{
+		cerr << "Error wrong dimensions for multiplying matrices." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> dat [ Nrows * Ncolumns2 ], temp;
+	for( size_t i = 0; i < Ncolumns2; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			dat[ i * Nrows + j ] = complex<double>( 0, 0 );
+			for( size_t k = 0; k < Nrows2; k++ )
+			{
+				Mat2.getElement( &temp, i, k );
+				dat[ i * Nrows + j ] += data[ k ][ j ] * temp;
+			}
+		}
+
+	Matrix ret( dat, Ncolumns2, Nrows );
 	return ret;
-
-
 }
 
 /* Operator *: Scalar multiplication (complex). */
@@ -532,12 +883,14 @@ Matrix Matrix::operator* ( double factor )
 /* Operator /: Matrix division. */
 Matrix Matrix::operator/ ( Matrix Mat2 )
 {
-	/* TODO */
-	Matrix ret;
+	Matrix ret = Mat2.inverse();
+	if( ret.isempty() )
+	{
+		Matrix ret;
+		return ret;
+	}
+	ret = *this * ret;
 	return ret;
-
-
-
 }
 
 /* Operator /: Scalar division (double). */
@@ -747,5 +1100,272 @@ Matrix floor( Matrix mat )
 	Matrix ret( dat, cols, rows );
 	return ret;
 }
+
+/* Creating a square matrix of ones. */
+Matrix ones( size_t n )
+{
+	complex<double> dat[ n * n ];
+	for( size_t i = 0; i < n*n; i++ )
+		dat[ i ] = complex<double>( 1, 0 );
+	Matrix ret( dat, n, n );
+	return ret;
+}
+
+/* Creating a matrix of ones. */
+Matrix ones( size_t col, size_t row )
+{
+	complex<double> dat[ col * row ];
+	for( size_t i = 0; i < col*row; i++ )
+		dat[ i ] = complex<double>( 1, 0 );
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+/* Creating a square matrix of zeros. */
+Matrix zeros( size_t n )
+{
+	complex<double> dat[ n * n ];
+	for( size_t i = 0; i < n*n; i++ )
+		dat[ i ] = complex<double>( 0, 0 );
+	Matrix ret( dat, n, n );
+	return ret;
+}
+
+/* Creating a matrix of zeros. */
+Matrix zeros( size_t col, size_t row )
+{
+	complex<double> dat[ col * row ];
+	for( size_t i = 0; i < col*row; i++ )
+		dat[ i ] = complex<double>( 0, 0 );
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+/* Creating a square identity matrix. */
+Matrix eye( size_t n )
+{
+	complex<double> dat[ n * n ];
+	for( size_t i = 0; i < n; i++ )
+		for( size_t j = 0; j < n; j++ )
+			dat[ i * n + j ] = complex<double>( i == j, 0 );
+	Matrix ret( dat, n, n );
+	return ret;
+}
+
+/* Creating an identity matrix. */
+Matrix eye( size_t col, size_t row )
+{
+	complex<double> dat[ col * row ];
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+			dat[ i * row + j ] = complex<double>( i == j, 0 );
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+/* Matlab: length(). */
+size_t length( Matrix mat )
+{
+	size_t col, row;
+	mat.size( &col, &row );
+	return col > row ? col : row;
+}
+
+/* Matlab: max(): One matrix. */
+Matrix max( Matrix mat )
+{
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col ], temp;
+	for( size_t i = 0; i < col; i++ )
+	{
+		dat[ i ] = complex<double>( 0, 0 );
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			if( dat[ i ].real() < temp.real() )
+				dat[ i ] = temp;
+		}
+	}
+	Matrix ret( dat, col, 1 );
+	return ret;
+}
+
+/* Matlab: min(): One matrix. */
+Matrix min( Matrix mat )
+{
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col ], temp;
+	for( size_t i = 0; i < col; i++ )
+	{
+		mat.getElement( &temp, i, 0 );
+		dat[ i ] = temp;
+		for( size_t j = 1; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			if( dat[ i ].real() > temp.real() )
+				dat[ i ] = temp;
+		}
+	}
+	Matrix ret( dat, col, 1 );
+	return ret;
+}
+
+/* Matlab: max(): Two matrices. */
+Matrix max( Matrix mat1, Matrix mat2 )
+{
+	size_t col1, row1, col2, row2;
+	mat1.size( &col1, &row1 );
+	mat2.size( &col2, &row2 );
+	
+	if( !( col1 == col2 && row1 == row2 ) )
+	{
+		cerr << "Error: Dimensions mismatch." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex<double> dat[ col1 * row1 ], temp1, temp2;
+	for( size_t i = 0; i < col1; i++ )
+		for( size_t j = 0; j < row1; j++ )
+		{
+			mat1.getElement( &temp1, i, j );
+			mat2.getElement( &temp2, i, j );
+			dat[ i ] = temp1.real() > temp2.real() ? temp1 : temp2;
+		}
+
+	Matrix ret( dat, col1, row1 );
+	return ret;
+}
+
+/* Matlab: min(): Two matrices. */
+Matrix min( Matrix mat1, Matrix mat2 )
+{
+	size_t col1, row1, col2, row2;
+	mat1.size( &col1, &row1 );
+	mat2.size( &col2, &row2 );
+	
+	if( !( col1 == col2 && row1 == row2 ) )
+	{
+		cerr << "Error: Dimensions mismatch." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex<double> dat[ col1 * row1 ], temp1, temp2;
+	for( size_t i = 0; i < col1; i++ )
+		for( size_t j = 0; j < row1; j++ )
+		{
+			mat1.getElement( &temp1, i, j );
+			mat2.getElement( &temp2, i, j );
+			dat[ i ] = temp1.real() < temp2.real() ? temp1 : temp2;
+		}
+
+	Matrix ret( dat, col1, row1 );
+	return ret;
+
+}
+
+
+/* Matlab: sum(): One matrix. */
+Matrix sum( Matrix mat )
+{
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col ], temp;
+	for( size_t i = 0; i < col; i++ )
+	{
+		dat[ i ] = complex<double>( 0, 0 );
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i ] += temp;
+		}
+	}
+	Matrix ret( dat, col, 1 );
+	return ret;
+}
+
+/* Matlab: repmat(): square. */
+Matrix repmat( Matrix mat, size_t n )
+{
+	size_t	col, row;
+	mat.size( &col, &row );
+
+	complex<double> dat[ col * n * row * n ], temp;
+	for( size_t k = 0; k < n; k++ )
+		for( size_t i = 0; i < col; i++ )
+			for( size_t l = 0; l < n; l++ )
+				for( size_t j = 0; j < row; j++ )
+				{
+					mat.getElement( &temp, i, j );
+					dat[ l * row + j + n * row * ( k * col + i ) ] = temp;
+				}
+	cout << "out" << endl;
+	Matrix ret( dat, col * n, row * n );
+	return ret;
+}
+
+/* Matlab: repmat(): m*n. */
+Matrix repmat( Matrix mat, size_t m, size_t n )
+{
+	size_t	col, row;
+	mat.size( &col, &row );
+	
+	complex<double> dat[ col * n * row * m ], temp;
+	for( size_t k = 0; k < n; k++ )
+		for( size_t i = 0; i < col; i++ )
+			for( size_t l = 0; l < m; l++ )
+				for( size_t j = 0; j < row; j++ )
+				{
+					mat.getElement( &temp, i, j );
+					dat[ l * row + j + m * row * ( k * col + i ) ] = temp;
+				}
+	Matrix ret( dat, col * n, row * m );
+	return ret;
+}
+
+/* Matlab: find(). */
+Matrix find( Matrix mat )
+{
+	Matrix ret;
+	size_t col, row;
+	mat.size( &col, &row );
+
+	complex<double> temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			if( temp != complex<double> ( 0, 0 ) )
+			{
+				double val = i * row + j;
+				ret.addRow( &val, 1 );
+			}
+		}
+	return ret;
+}
+
+/* matlab: hamming(). */
+Matrix hamming( size_t n )
+{
+	complex<double> dat[ n ];
+	for( size_t i = 0; i < n; i++ )
+		dat[ i ] = complex<double>( 0.54 - 0.46 * cos( 2 * M_PI * i / ( n - 1 ) ) , 0 );
+
+	Matrix ret( dat, 1, n );
+	return ret;
+}
+
+/* matlab: reshape(). */
+Matrix reshape( Matrix mat, size_t row, size_t col )
+{
+	return mat.reshape( row, col );
+}
+
+
+
+
 
 

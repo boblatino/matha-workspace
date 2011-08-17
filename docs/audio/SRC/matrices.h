@@ -40,6 +40,20 @@ class Matrix
 		Matrix operator/ ( std::complex<double> );
 		Matrix operator/ ( double );
 
+		/* Logic operations. */
+		Matrix operator== ( Matrix );
+		Matrix operator== ( std::complex<double> );
+		Matrix operator== ( double );
+		Matrix operator!= ( Matrix );
+		Matrix operator!= ( std::complex<double> );
+		Matrix operator!= ( double );
+		Matrix operator> ( Matrix );
+		Matrix operator> ( std::complex<double> );
+		Matrix operator> ( double );
+		Matrix operator< ( Matrix );
+		Matrix operator< ( std::complex<double> );
+		Matrix operator< ( double );
+
 		/* Matrix operations. */
 		Matrix inverse();
 		Matrix transpose();
@@ -57,6 +71,7 @@ class Matrix
 		bool isempty();
 		void printout();
 		void clear();
+		Matrix reshape( size_t, size_t );
 
 	private:
 		bool initialized;
@@ -79,13 +94,19 @@ Matrix exp( Matrix );
 Matrix round( Matrix );
 
 /* Matlab: max(). */
+Matrix max( Matrix, Matrix );
 Matrix max( Matrix );
 
 /* Matlab: min(). */
+Matrix min( Matrix, Matrix );
 Matrix min( Matrix );
 
 /* Matlab: repmat(). */
+Matrix repmat( Matrix, size_t n );
 Matrix repmat( Matrix, size_t y, size_t x );
+
+/* Matlab: length(). */
+size_t length( Matrix );
 
 /* Matlab: sum(). */
 Matrix sum( Matrix );
@@ -117,13 +138,22 @@ Matrix ceil( Matrix );
 /* Matlab: log2(). */
 Matrix log2( Matrix );
 
-/*
- * These are the Matlab functions that haven't been neither implemented nor prototyped yet:
- * hamming
- * enframe
- * rfft
- * irfft
- * reshape
- */
+/* Creating a matrix of ones. */
+Matrix ones( size_t );
+Matrix ones( size_t, size_t );
+
+/* Creating a matrix of zeros. */
+Matrix zeros( size_t );
+Matrix zeros( size_t, size_t );
+
+/* Creating an identity matrix. */
+Matrix eye( size_t );
+Matrix eye( size_t, size_t );
+
+/* matlab: hamming(). */
+Matrix hamming( size_t );
+
+/* matlab: reshape(). */
+Matrix reshape( Matrix, size_t, size_t );
 
 #endif //__MATRICES_H__
