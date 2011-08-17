@@ -10,6 +10,8 @@ int main()
 	double k[ 9 ] = { 1, 5, 2, 0, 3, 4, 2, 2, 1 };
 	double l[ 16 ] = { 2, 0, 0, 0, 3, -1, 0, 3, 4, 2, 2, -6, 5, 1, 4, 0 };
 	double m[ 20 ] = { 1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169, 196, 225, 256, 289, 324, 361, 400 };
+	double n[ 6 ] = { 1, 0, 2, 1, 3, 2 };
+	double o[ 9 ] = { 0, 2, 1, 1, 1, 0, 1, 0, 2 };
 	
 	Matrix mat1;
 	Matrix mat2( i, 4, 5 );
@@ -65,6 +67,14 @@ int main()
 	mat1 = mat2 - mat3;
 	mat1.printout();
 
+	cout << " inserting a row at 1 in mat1." << endl;
+	mat1.insertRow( j, 5, 1 );
+	mat1.printout();
+
+	cout << " inserting a column at 2 in mat1." << endl;
+	mat1.insertColumn( j, 7, 2 );
+	mat1.printout();
+
 	cout << "Clearing mat1." << endl;
 	mat1.clear();
 	mat1.printout();
@@ -117,6 +127,59 @@ int main()
 
 	cout << "Its sqrt()." <<endl;
 	sqrt(mat6).printout();
+
+	cout << "Creating two matrices and multipling them." << endl << "m1:" << endl;
+	Matrix m1( n, 3, 2);
+	m1.printout();
+	cout << "Length of m1 = " << length( m1 ) << endl;
+	cout << "m2:" << endl;
+	Matrix m2( o, 3, 3);
+	m2.printout();
+	cout << "m3 = m1 * m2:" << endl;
+	Matrix m3;
+	m3 = m1 * m2;
+	m3.printout();
+	cout << "Length of m3 = " << length( m3 ) << endl;
+	cout << "Max( m3 ):" <<endl;
+	max(m3).printout();
+
+	cout << "Min( m3 ):" <<endl;
+	min(m3).printout();
+
+	cout << "Sum( m3 ):" <<endl;
+	sum(m3).printout();
+
+	cout << "Ones, zeros, and eye:" << endl;
+	ones( 5 ).printout();
+	ones( 6, 5 ).printout();
+	zeros( 5 ).printout();
+	zeros( 4, 3 ).printout();
+	eye( 3 ).printout();
+	eye( 2, 3 ).printout();
+
+	cout << "repmat( m3, 3 )" << endl;
+	repmat( m3, 3 ).printout();
+
+	cout << "repmat( m3, 3, 2 )" << endl;
+	repmat( m3, 3 , 2 ).printout();
+
+	cout << "find( eye( 3 ) )" << endl;
+	find( eye( 3 ) ).printout();
+
+	cout << "mat4 > ones(3) * 2" << endl;
+	( mat4 > ( ones(3) * 2 ) ).printout();
+
+	cout << "mat4 == 2" << endl;
+	( mat4 == 2 ).printout();
+
+	cout << "mat4 > 1" << endl;
+	( mat4 > 1 ).printout();
+
+	cout << "reshape( eye( 4 ), 8, 2 )" << endl;
+	reshape( eye( 4 ), 8, 2 ).printout();
+
+	cout << "hamming( 10 )" << endl;
+	hamming( 10 ).printout();
 
 	return 0;
 }
