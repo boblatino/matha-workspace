@@ -181,5 +181,41 @@ int main()
 	cout << "hamming( 10 )" << endl;
 	hamming( 10 ).printout();
 
+	cout << "fft(ones(5,1) )" <<endl;
+	Matrix ma = fft(ones(5,1));
+	ma.printout();
+
+	cout << "fft(ones(1,5) )" <<endl;
+	Matrix mb = fft(ones(1,5));
+	mb.printout();
+
+	cout << "fft(eye(4))" << endl;
+	Matrix mc = fft( eye( 4 ) );
+	mc.printout();
+
+	cout << "fft(ones(5,1), 3 )" <<endl;
+	fft( ones( 5, 1 ), 3 ).printout();
+
+	cout << "fft(ones(1,5),3)" <<endl;
+	fft( ones( 1, 5 ), 3 ).printout();
+
+	cout << "fft(eye(4),3)" << endl;
+	fft( eye( 5 ), 3 ).printout();
+
+	cout << "Inverse ma." << endl;
+	ifft( ma ).printout();
+
+	cout << "Inverse mb." << endl;
+	ifft( mb ).printout();
+
+	cout << "Inverse mc." << endl;
+	ifft( mc ).printout();
+
+	cout << "3:2:12" << endl;
+	seq( 3, 2, 12 ).printout();
+
+	cout<< "flipud( ma ).printout();" << endl;
+	flipud( ma ).printout();
+
 	return 0;
 }

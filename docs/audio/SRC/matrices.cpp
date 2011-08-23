@@ -1,9 +1,13 @@
 #include "matrices.h"
 #include <iomanip>
 #include <iostream>
+#include <mffm/complexFFT.H>
 
 #define PRINT_WIDTH 6
+
+
 using namespace std;
+
 
 /* First constructor: Uninitialized matrix. */
 Matrix::Matrix()
@@ -931,6 +935,82 @@ Matrix Matrix::operator/ ( complex<double> factor )
 	return ret;
 }
 
+/* Operator +: Scalar addition (double). */
+Matrix Matrix::operator+ ( double factor )
+{
+	if( isempty() )
+	{
+		cerr << "Error adding an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ] + factor;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator +: Scalar addition (complex). */
+Matrix Matrix::operator+ ( complex<double> factor )
+{
+	if( isempty() )
+	{
+		cerr << "Error adding an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ] + factor;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator -: Scalar subtraction (double). */
+Matrix Matrix::operator- ( double factor )
+{
+	if( isempty() )
+	{
+		cerr << "Error subtracting an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ] - factor;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator -: Scalar subtraction (complex). */
+Matrix Matrix::operator- ( complex<double> factor )
+{
+	if( isempty() )
+	{
+		cerr << "Error subtracting an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ] - factor;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
 /* Matlab: exp(). */
 Matrix exp( Matrix mat )
 {
@@ -1009,6 +1089,38 @@ Matrix conj( Matrix mat )
 		{
 			mat.getElement( dat + i * rows + j, i, j );
 			dat[ i * rows + j ] = conj( dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
+/* Matlab: real(). */
+Matrix real( Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = real( dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
+/* Matlab: imag(). */
+Matrix imag( Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = imag( dat[ i * rows + j ] );
 		}
 	Matrix ret( dat, cols, rows );
 	return ret;
@@ -1112,7 +1224,7 @@ Matrix ones( size_t n )
 }
 
 /* Creating a matrix of ones. */
-Matrix ones( size_t col, size_t row )
+Matrix ones( size_t row, size_t col )
 {
 	complex<double> dat[ col * row ];
 	for( size_t i = 0; i < col*row; i++ )
@@ -1132,7 +1244,7 @@ Matrix zeros( size_t n )
 }
 
 /* Creating a matrix of zeros. */
-Matrix zeros( size_t col, size_t row )
+Matrix zeros( size_t row, size_t col )
 {
 	complex<double> dat[ col * row ];
 	for( size_t i = 0; i < col*row; i++ )
@@ -1153,7 +1265,7 @@ Matrix eye( size_t n )
 }
 
 /* Creating an identity matrix. */
-Matrix eye( size_t col, size_t row )
+Matrix eye( size_t row, size_t col )
 {
 	complex<double> dat[ col * row ];
 	for( size_t i = 0; i < col; i++ )
@@ -1364,8 +1476,298 @@ Matrix reshape( Matrix mat, size_t row, size_t col )
 	return mat.reshape( row, col );
 }
 
+/* Internal fft function. */
+complex<double> *__fft( complex<double> *dat, size_t n )
+{
+	complex<double> *ret = new complex<double>[ n ];
+	complexFFTData fftdat( n );
+	complexFFT myfft( &fftdat );
+
+	for( size_t i = 0; i < n; i++ )
+	{
+		c_re( fftdat.in[ i ] ) = dat[ i ].real();
+		c_im( fftdat.in[ i ] ) = dat[ i ].imag();
+	}
+
+	myfft.fwdTransform();
 
 
+	for( size_t i = 0; i < (size_t) n; i++ )
+		ret[ i ] = complex<double>( c_re( fftdat.out[ i ] ), c_im( fftdat.out[ i ] ) );
+
+	return ret;
+}
+
+/* Internal ifft function. */
+complex<double> *__ifft( complex<double> *dat, size_t n )
+{
+	complex<double> *ret = new complex<double>[ n ];
+	complexFFTData fftdat( n );
+	complexFFT myfft( &fftdat );
+
+	for( size_t i = 0; i < n; i++ )
+	{
+		c_re( fftdat.out[ i ] ) = dat[ i ].real();
+		c_im( fftdat.out[ i ] ) = dat[ i ].imag();
+	}
+
+	myfft.invTransform();
 
 
+	for( size_t i = 0; i < (size_t) n; i++ )
+		ret[ i ] = complex<double>( c_re( fftdat.in[ i ] ), c_im( fftdat.in[ i ] ) );
 
+	return ret;
+}
+
+/* matlab: fft(). */
+Matrix fft( Matrix mat )
+{
+	size_t col, row;
+	Matrix ret;
+
+	mat.size( &col, &row );
+
+	if( col == 1 )
+	{
+		complex<double> dat[ row ], *temp;
+		for( size_t i = 0; i < row; i++ )
+			mat.getElement( dat + i, 0, i );
+		temp = __fft( dat, row );
+		ret.addColumn( temp, row );
+	}
+	else if( row == 1 )
+	{
+		complex<double> dat[ col ], *temp;
+		for( size_t i = 0; i < col; i++ )
+			mat.getElement( dat + i, i, 0 );
+		temp = __fft( dat, col );
+		ret.addRow( temp, col );
+	}
+	else
+	{
+		complex<double> dat[ row ], *temp;
+		for( size_t i = 0; i < col; i++ )
+		{
+			for( size_t j = 0; j < row; j++ )
+				mat.getElement( dat + j, i, j );
+			temp = __fft( dat, row );
+			ret.addColumn( temp, row );
+		}
+	}
+
+	return ret;
+}
+
+Matrix fft( Matrix mat, size_t n )
+{
+	size_t col, row;
+	Matrix ret;
+	mat.size( &col, &row );
+
+	if( col == 1 )
+	{
+		complex<double> dat[ n ], *fft;
+		for( size_t i = 0; i < n; i++ )
+			mat.getElement( dat + i, 0, i );
+		fft = __fft( dat, n );
+		ret.addColumn( fft, n );
+	}
+	else if( row == 1 )
+	{
+		complex<double> dat[ n ], *fft;
+		for( size_t i = 0; i < n; i++ )
+			mat.getElement( dat + i, i, 0 );
+		fft = __fft( dat, n );
+		ret.addRow( fft, n );
+	}
+	else
+	{
+		complex<double> dat[ n ], *temp;
+		for( size_t i = 0; i < col; i++ )
+		{
+			for( size_t j = 0; j < n; j++ )
+				mat.getElement( dat + j, i, j );
+			temp = __fft( dat, n );
+			ret.addColumn( temp, n );
+		}
+	}
+
+	return ret;
+}
+
+Matrix fft( Matrix mat, size_t n, size_t d )
+{
+	if( d == 1 )
+		return fft( mat, n );
+	else if( d == 2 )
+		return fft( mat.transpose(), n ).transpose();
+	else
+	{
+		cerr << "FFT: Error Dimension not supported. Only 2-D matrices are supported." << endl;
+		Matrix ret;
+		return ret;
+	}
+}
+
+/* matlab: ifft(). */
+Matrix ifft( Matrix mat )
+{
+	size_t col, row;
+	Matrix ret;
+
+	mat.size( &col, &row );
+
+	if( col == 1 )
+	{
+		complex<double> dat[ row ], *temp;
+		for( size_t i = 0; i < row; i++ )
+			mat.getElement( dat + i, 0, i );
+		temp = __ifft( dat, row );
+		ret.addColumn( temp, row );
+		ret /= (double) row;
+	}
+	else if( row == 1 )
+	{
+		complex<double> dat[ col ], *temp;
+		for( size_t i = 0; i < col; i++ )
+			mat.getElement( dat + i, i, 0 );
+		temp = __ifft( dat, col );
+		ret.addRow( temp, col );
+		ret /= (double) col;
+	}
+	else
+	{
+		complex<double> dat[ row ], *temp;
+		for( size_t i = 0; i < col; i++ )
+		{
+			for( size_t j = 0; j < row; j++ )
+				mat.getElement( dat + j, i, j );
+			temp = __ifft( dat, row );
+			ret.addColumn( temp, row );
+		}
+		ret /= (double) row;
+	}
+
+	return ret;
+}
+
+Matrix ifft( Matrix mat, size_t n )
+{
+	size_t col, row;
+	Matrix ret;
+	mat.size( &col, &row );
+
+	if( col == 1 )
+	{
+		complex<double> dat[ n ], *fft;
+		for( size_t i = 0; i < n; i++ )
+			mat.getElement( dat + i, 0, i );
+		fft = __ifft( dat, n );
+		ret.addColumn( fft, n );
+	}
+	else if( row == 1 )
+	{
+		complex<double> dat[ n ], *fft;
+		for( size_t i = 0; i < n; i++ )
+			mat.getElement( dat + i, i, 0 );
+		fft = __ifft( dat, n );
+		ret.addRow( fft, n );
+	}
+	else
+	{
+		complex<double> dat[ n ], *temp;
+		for( size_t i = 0; i < col; i++ )
+		{
+			for( size_t j = 0; j < n; j++ )
+				mat.getElement( dat + j, i, j );
+			temp = __ifft( dat, n );
+			ret.addColumn( temp, n );
+		}
+	}
+
+	ret /= n;
+	return ret;
+}
+
+Matrix ifft( Matrix mat, size_t n, size_t d )
+{
+	if( d == 1 )
+		return ifft( mat, n );
+	else if( d == 2 )
+		return ifft( mat.transpose(), n ).transpose();
+	else
+	{
+		cerr << "IFFT: Error Dimension not supported. Only 2-D matrices are supported." << endl;
+		Matrix ret;
+		return ret;
+	}
+}
+
+
+/* replacing matlab's (start:end). */
+Matrix seq( double start, double end )
+{
+	return seq( start, 1, end );
+}
+
+/* replacing matlab's (start:step:end). */
+Matrix seq( double start, double step, double end )
+{
+	complex<double> dat[ (long long) ceil( ( end - start + 1 ) / step ) ];
+	size_t col = 0;
+	for( double i = start; i <= end; i += step )
+	{
+		dat[ col++ ] = complex<double>( i, 0 );
+	}
+	Matrix ret( dat, col, 1 );
+	return ret;
+}
+
+/* Fix functions. */
+double fix( double val )
+{
+	return copysign( floor( abs( val ) ), val );
+}
+
+complex<double> fix( complex<double> val )
+{
+	return complex<double>( fix( val.real() ), fix( val.imag() ) );
+}
+
+Matrix fix( Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = fix( dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
+/* Matlab: flipud(). */
+Matrix flipud( Matrix mat )
+{
+	Matrix ret;
+	size_t row, col;
+	mat.size( &col, &row );
+	complex<double> dat[ col ];
+
+	for( size_t i = row - 1; i > 0; i-- )
+	{
+		for( size_t j = 0; j < col; j++ )
+			mat.getElement( dat + j, j, i );
+		ret.addRow( dat, col );
+	}
+
+	for( size_t j = 0; j < col; j++ )
+		mat.getElement( dat + j, j, 0 );
+	ret.addRow( dat, col );
+
+	return ret;
+}
