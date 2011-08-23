@@ -7,7 +7,6 @@ using namespace std;
 int main()
 {
 	double x[ 25 ] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24};
-	double w[ 6 ] = { 1, 2, 3, 3, 2, 1 };
 
 	Matrix m1( x, 5, 5 );
 	Matrix win;
@@ -17,10 +16,12 @@ int main()
 	m1.printout();
 	cout << "win.printout();" << endl;
 	win.printout();
+
 	cout << "enframe( m1, win ).printout();" << endl;
 	enframe( m1, win ).printout();
 	cout << "enframe( m1, win, 2 ).printout();" << endl;
 	enframe( m1, win, 2 ).printout();
+
 	cout << "mr0 = rfft( m1, 5, 1 ).printout();" << endl;
 	Matrix mr0 = rfft( m1, 5, 1 );
 	mr0.printout();
