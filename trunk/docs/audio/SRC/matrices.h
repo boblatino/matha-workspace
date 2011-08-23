@@ -32,13 +32,26 @@ class Matrix
 		/* Arithmatic operators. */
 		Matrix operator= ( Matrix );
 		Matrix operator+ ( Matrix );
+		Matrix operator+ ( std::complex<double> );
+		Matrix operator+ ( double );
 		Matrix operator- ( Matrix );
+		Matrix operator- ( std::complex<double> );
+		Matrix operator- ( double );
 		Matrix operator* ( Matrix );
 		Matrix operator* ( std::complex<double> );
 		Matrix operator* ( double );
 		Matrix operator/ ( Matrix );
 		Matrix operator/ ( std::complex<double> );
 		Matrix operator/ ( double );
+
+		template< typename T >
+		Matrix operator+= ( T x ) { return *this = *this + x; }
+		template< typename T >
+		Matrix operator-= ( T x ) { return *this = *this - x; }
+		template< typename T >
+		Matrix operator*= ( T x ) { return *this = *this * x; }
+		template< typename T >
+		Matrix operator/= ( T x ) { return *this = *this / x; }
 
 		/* Logic operations. */
 		Matrix operator== ( Matrix );
@@ -72,7 +85,7 @@ class Matrix
 		void printout();
 		void clear();
 		Matrix reshape( size_t, size_t );
-
+		
 	private:
 		bool initialized;
 		size_t Ncolumns;
@@ -126,6 +139,12 @@ Matrix nextpow2( Matrix );
 /* Matlab: conj(). */
 Matrix conj( Matrix );
 
+/* Matlab: real(). */
+Matrix real( Matrix );
+
+/* Matlab: imag(). */
+Matrix imag( Matrix );
+
 /* Matlab: log10(). */
 Matrix log10( Matrix );
 
@@ -155,5 +174,29 @@ Matrix hamming( size_t );
 
 /* matlab: reshape(). */
 Matrix reshape( Matrix, size_t, size_t );
+
+/* matlab: flipud(). */
+Matrix flipud( Matrix );
+
+/* matlab: fft(). */
+Matrix fft( Matrix );
+Matrix fft( Matrix, size_t );
+Matrix fft( Matrix, size_t, size_t );
+
+/* matlab: fft(). */
+Matrix ifft( Matrix );
+Matrix ifft( Matrix, size_t );
+Matrix ifft( Matrix, size_t, size_t );
+
+/* replacing matlab's (start:end). */
+Matrix seq( double start, double end );
+
+/* replacing matlab's (start:step:end). */
+Matrix seq( double start, double step, double end );
+
+/* Fix functions. */
+double fix( double val );
+std::complex<double> fix( std::complex<double> val );
+Matrix fix( Matrix mat );
 
 #endif //__MATRICES_H__
