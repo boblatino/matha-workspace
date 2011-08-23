@@ -3,6 +3,22 @@
 
 #include "matrices.h"
 
+typedef struct
+{
+	double taca;
+	double tamax;
+	double taminh;
+	double tpfall;
+	double tbmax;
+	double qeqmin;
+	double qeqmax;
+	double av;
+	double td;
+	double nu;
+	Matrix qith;
+	Matrix nsmdb;
+} estnoisem_param;
+
 /* estnoisem(). */
 void estnoisem( );
 

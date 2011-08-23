@@ -703,7 +703,6 @@ Matrix Matrix::operator!= ( double value )
 	return *this != complex<double>( value, 0 );
 }
 
-
 /* Operator >: comparing to a matrix. */
 Matrix Matrix::operator> ( Matrix Mat2 )
 {
@@ -812,6 +811,116 @@ Matrix Matrix::operator< ( double value )
 Matrix Matrix::operator< ( complex<double> value )
 {
 	return *this < value.real() ;
+}
+
+/* Operator >=: comparing to a matrix. */
+Matrix Matrix::operator>= ( Matrix Mat2 )
+{
+	if( this->isempty() || Mat2.isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
+	{
+		cerr << "Error comparing matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ this->Nrows * this->Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			complex<double> t1, t2;
+			this->getElement( &t1, i, j );
+			Mat2.getElement( &t2, i, j );
+			complex_data[ i * Nrows + j] = t1.real() >= t2.real();
+		}
+
+	Matrix ret( complex_data, this->Ncolumns, this-> Nrows );
+	return ret;
+}
+
+/* Operator >=: Scalar comparison (double). */
+Matrix Matrix::operator>= ( double value )
+{
+	if( isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ].real() >= value;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator >=: Scalar comparison (complex). */
+Matrix Matrix::operator>= ( complex<double> value )
+{
+	return *this >= value.real() ;
+}
+
+/* Operator <=: comparing to a matrix. */
+Matrix Matrix::operator<= ( Matrix Mat2 )
+{
+	if( this->isempty() || Mat2.isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
+	{
+		cerr << "Error comparing matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ this->Nrows * this->Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			complex<double> t1, t2;
+			this->getElement( &t1, i, j );
+			Mat2.getElement( &t2, i, j );
+			complex_data[ i * Nrows + j] = t1.real() <= t2.real();
+		}
+
+	Matrix ret( complex_data, this->Ncolumns, this-> Nrows );
+	return ret;
+}
+
+/* Operator <=: Scalar comparison (double). */
+Matrix Matrix::operator<= ( double value )
+{
+	if( isempty() )
+	{
+		cerr << "Error comparing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j] = data[ i ][ j ].real() <= value;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+/* Operator <=: Scalar comparison (complex). */
+Matrix Matrix::operator<= ( complex<double> value )
+{
+	return *this <= value.real() ;
 }
 
 

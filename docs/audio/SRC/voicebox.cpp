@@ -6,6 +6,74 @@
 
 using namespace std;
 
+void mhvals( double d, double *out_m, double *out_h  )
+{
+	static double dmh_d[][ 18 ] =
+	{
+		 {1,2,5,8,10,15,20,30,40,60,80,120,140,160,180,220,260,300},
+		 {0,0.26,0.48,0.58,0.61,0.668,0.705,0.762,0.8,0.841,0.865,0.89,0.9,0.91,0.92,0.93,0.935,0.94},
+		 {0,0.15,0.48,0.78,0.98,1.55,2,2.3,2.52,3.1,3.38,4.15,4.35,4.25,3.9,4.1,4.7,5}
+	};
+
+	static Matrix dmh;
+	dmh.addColumn( dmh_d[ 0 ], 18 );
+	dmh.addColumn( dmh_d[ 1 ], 18 );
+	dmh.addColumn( dmh_d[ 2 ], 18 );
+
+	complex <double> temp, temp2;
+	size_t i, j;
+
+	Matrix mat_i = find( dmh.getSubMatrix( 0, 0, 0, 17) >= d );
+	if( mat_i.isempty() )
+	{
+		dmh.size( &j, &i);
+		j = --i;
+	}
+	else
+	{
+		mat_i.getElement( &temp, 0, 0 );
+		i = temp.real();
+		j = i-1;
+	}
+	
+	dmh.getElement( &temp, 0, i	);
+	if( d == temp.real() )
+	{
+		if( out_m != NULL )
+		{
+			dmh.getElement( &temp, 1, i );
+			*out_m = temp.real();
+		}
+		if( out_h != NULL )
+		{
+			dmh.getElement( &temp, 2, i );
+			*out_h = temp.real();
+		}
+	}
+	else
+	{
+		dmh.getElement( &temp, 0, i - 1 );
+		double qj = sqrt( temp.real() );		 // interpolate using sqrt(d)
+		dmh.getElement( &temp, 0, i );
+		double qi = sqrt( temp.real() );
+		double q = sqrt(d);
+
+		if( out_h != NULL )
+		{
+			dmh.getElement( &temp, 2, i );
+			dmh.getElement( &temp2, 2, j );
+			*out_h = temp.real() + ( q - qi ) * ( temp2.real() - temp.real() ) / ( qj - qi );
+		}
+		if( out_m != NULL )
+		{
+			dmh.getElement( &temp, 1, i );
+			dmh.getElement( &temp2, 1, j );
+			*out_m = temp.real() + ( qi * qj / q - qj ) * ( temp2.real() - temp.real() ) / ( qi - qj );
+		}
+	}
+
+}
+
 void estnoisem()
 {
 

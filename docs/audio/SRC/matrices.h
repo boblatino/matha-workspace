@@ -66,6 +66,12 @@ class Matrix
 		Matrix operator< ( Matrix );
 		Matrix operator< ( std::complex<double> );
 		Matrix operator< ( double );
+		Matrix operator>= ( Matrix );
+		Matrix operator>= ( std::complex<double> );
+		Matrix operator>= ( double );
+		Matrix operator<= ( Matrix );
+		Matrix operator<= ( std::complex<double> );
+		Matrix operator<= ( double );
 
 		/* Matrix operations. */
 		Matrix inverse();
