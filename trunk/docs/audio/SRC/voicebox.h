@@ -17,10 +17,31 @@ typedef struct
 	double nu;
 	Matrix qith;
 	Matrix nsmdb;
-} estnoisem_param;
+} estnoisem_alg_param;
+
+typedef struct
+{
+	double nrcum;
+	Matrix p;
+	Matrix ac;
+	Matrix sn2;
+	Matrix pb;
+	Matrix pb2;
+	Matrix pminu;
+	Matrix actmin;
+	Matrix actminsub;
+	double subwc;
+	Matrix actbuf;
+	double ibuf;
+	Matrix lminflag;
+	double tinc;
+	estnoisem_alg_param qq;
+} estnoisem_out_stat;
+
 
 /* estnoisem(). */
-void estnoisem( );
+void estnoisem( Matrix yf, double tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs );
+void estnoisem( Matrix yf, estnoisem_out_stat *tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs );
 
 /* specsub(). */
 void specsub();

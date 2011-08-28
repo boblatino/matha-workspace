@@ -196,11 +196,29 @@ void Matrix::printout()
 }
 
 /* getElement(). */
-int Matrix::getElement( complex <double> *dat, size_t col, size_t row)
+int Matrix::getElement( complex <double> *dat, size_t index )
+{
+	if( Ncolumns * Nrows - 1 < index )
+		return -1;
+	*dat = data[ index / Nrows ][ index % Nrows ];
+	return 0;
+}
+
+/* getElement(). */
+int Matrix::getElement( complex <double> *dat, size_t col, size_t row )
 {
 	if( col >= Ncolumns || row >= Nrows )
 		return -1;
 	*dat = data[col][row];
+	return 0;
+}
+
+/* setElement(). */
+int Matrix::setElement( complex <double> dat, size_t index )
+{
+	if( Ncolumns * Nrows - 1 < index )
+		return -1;
+	data[ index / Nrows ][ index % Nrows ] = dat;
 	return 0;
 }
 
@@ -225,7 +243,7 @@ Matrix Matrix::getSubMatrix( size_t sCol, size_t eCol, size_t sRow, size_t eRow 
 	complex<double> dat[ ( eCol - sCol + 1 ) * ( eRow - sRow + 1 ) /*+ 1*/];
 	for( size_t i = sCol; i <= eCol; i++ )
 		for( size_t j = sRow; j <= eRow; j++ )
-			getElement( dat + ( i - sCol ) * ( eRow - sRow + 1 ) + j, i, j );
+			getElement( dat + ( i - sCol ) * ( eRow - sRow + 1 ) + j - sRow, i, j );
 			 
 	Matrix ret( dat, eCol - sCol + 1, eRow - sRow + 1 );
 	return ret;
@@ -455,6 +473,18 @@ Matrix dotProduct( Matrix MATa, Matrix MATb )
 	size_t Ncolumns, Ncolumnsb, Nrows, Nrowsb;
 	MATa.size( &Ncolumns, &Nrows );
 	MATb.size( &Ncolumnsb, &Nrowsb );
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		MATa.getElement( &temp, 0, 0 );
+		return MATb * temp;
+	}
+	if( Ncolumnsb == 1 && Nrowsb == 1 )
+	{
+		complex<double> temp;
+		MATb.getElement( &temp, 0, 0 );
+		return MATa * temp;
+	}
 	if( Ncolumns != Ncolumnsb || Nrows != Nrowsb )
 	{
 		cerr << "Error multiplying matrices with different dimensions." << endl;
@@ -476,6 +506,90 @@ Matrix dotProduct( Matrix MATa, Matrix MATb )
 	return ret;
 }
 
+Matrix dotProduct( Matrix mat, complex<double> val )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: Multiplying an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col * row ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = temp * val;
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+Matrix dotProduct( Matrix mat, double val )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: Multiplying an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col * row ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = temp * val;
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+Matrix dotProduct( complex<double> val, Matrix mat )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: Multiplying an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col * row ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = temp * val;
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+Matrix dotProduct( double val, Matrix mat )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: Multiplying an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col * row ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = temp * val;
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
 /* ./ */
 Matrix dotDivision( Matrix MATa, Matrix MATb )
 {
@@ -489,6 +603,18 @@ Matrix dotDivision( Matrix MATa, Matrix MATb )
 	size_t Ncolumns, Ncolumnsb, Nrows, Nrowsb;
 	MATa.size( &Ncolumns, &Nrows );
 	MATb.size( &Ncolumnsb, &Nrowsb );
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		MATa.getElement( &temp, 0, 0 );
+		return MATb / temp;
+	}
+	if( Ncolumnsb == 1 && Nrowsb == 1 )
+	{
+		complex<double> temp;
+		MATb.getElement( &temp, 0, 0 );
+		return MATa / temp;
+	}
 	if( Ncolumns != Ncolumnsb || Nrows != Nrowsb )
 	{
 		cerr << "Error dividing matrices with different dimensions." << endl;
@@ -505,6 +631,245 @@ Matrix dotDivision( Matrix MATa, Matrix MATb )
 			MATb.getElement( &t2, i, j );
 			complex_data[ i * Nrows + j] = t1 / t2;
 		}
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+Matrix dotDivision( Matrix mat, complex<double> val )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: Dividing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col * row ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = temp / val;
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+Matrix dotDivision( Matrix mat, double val )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: Dividing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col * row ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = temp / val;
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+Matrix dotDivision( complex<double> val, Matrix mat )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: Dividing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col * row ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = val / temp;
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+Matrix dotDivision( double val, Matrix mat )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: Dividing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	complex<double> dat[ col * row ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = val / temp;
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+
+Matrix Matrix::operator| ( Matrix Mat2 )
+{
+	if( this->isempty() || Mat2.isempty() )
+	{
+		cerr << "Error oring an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		if( temp.imag() != 0 )
+		{
+			cerr << "Error, Oring a complex number." << endl;
+			Matrix ret;
+			return ret;
+		}
+		return Mat2 | temp.real();
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		if( temp.imag() != 0 )
+		{
+			cerr << "Error, Oring a complex number." << endl;
+			Matrix ret;
+			return ret;
+		}
+		return *this | temp.real();
+	}
+	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
+	{
+		cerr << "Error comparing matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ this->Nrows * this->Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			complex<double> t1, t2;
+			this->getElement( &t1, i, j );
+			Mat2.getElement( &t2, i, j );
+			if( t1.imag() != 0  || t2.imag() != 0 )
+			{
+				cerr << "Error, Oring a complex number." << endl;
+				Matrix ret;
+				return ret;
+			}
+			complex_data[ i * Nrows + j] = t1.real() || t2.real();
+		}
+
+	Matrix ret( complex_data, this->Ncolumns, this-> Nrows );
+	return ret;
+}
+
+Matrix Matrix::operator| ( double value )
+{
+	if( isempty() )
+	{
+		cerr << "Error oring an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j ] = data[ i ][ j ].real() || value;
+
+	Matrix ret( complex_data, Ncolumns, Nrows );
+	return ret;
+}
+
+Matrix Matrix::operator& ( Matrix Mat2 )
+{
+	if( this->isempty() || Mat2.isempty() )
+	{
+		cerr << "Error anding an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		if( temp.imag() != 0 )
+		{
+			cerr << "Error, anding a complex number." << endl;
+			Matrix ret;
+			return ret;
+		}
+		return Mat2 & temp.real();
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		if( temp.imag() != 0 )
+		{
+			cerr << "Error, anding a complex number." << endl;
+			Matrix ret;
+			return ret;
+		}
+		return *this & temp.real();
+	}
+	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
+	{
+		cerr << "Error comparing matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ this->Nrows * this->Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			complex<double> t1, t2;
+			this->getElement( &t1, i, j );
+			Mat2.getElement( &t2, i, j );
+			if( t1.imag() != 0  || t2.imag() != 0 )
+			{
+				cerr << "Error, anding a complex number." << endl;
+				Matrix ret;
+				return ret;
+			}
+			complex_data[ i * Nrows + j] = t1.real() && t2.real();
+		}
+
+	Matrix ret( complex_data, this->Ncolumns, this-> Nrows );
+	return ret;
+}
+
+Matrix Matrix::operator& ( double value )
+{
+	if( isempty() )
+	{
+		cerr << "Error anding an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	complex <double> complex_data[ Nrows * Ncolumns ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			complex_data[ i * Nrows + j ] = data[ i ][ j ].real() && value;
 
 	Matrix ret( complex_data, Ncolumns, Nrows );
 	return ret;
@@ -533,6 +898,23 @@ Matrix Matrix::operator= ( Matrix Mat2 )
 	return *this;
 }
 
+Matrix Matrix::operator= ( complex<double> val )
+{
+	clear();
+	Nrows = 1;
+	Ncolumns = 1;
+	initialized = true;
+	map< size_t, complex<double> > temp;
+	temp.insert( pair< size_t, complex<double> >( 0, val ) );
+	data.insert( pair< size_t, map< size_t, complex <double> > >( 0, temp ) );
+	return *this;
+}
+
+Matrix Matrix::operator= ( double val )
+{
+	return *this = complex<double>( val, 0 );
+}
+
 /* Operator +. */
 Matrix Matrix::operator+ ( Matrix Mat2 )
 {
@@ -541,6 +923,18 @@ Matrix Matrix::operator+ ( Matrix Mat2 )
 		cerr << "Error adding an empty matrix." << endl;
 		Matrix ret;
 		return ret;
+	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		this->getElement( &temp, 0, 0 );
+		return Mat2 + temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this + temp;
 	}
 	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
 	{
@@ -572,6 +966,18 @@ Matrix Matrix::operator- ( Matrix Mat2 )
 		Matrix ret;
 		return ret;
 	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		return Mat2 - temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this - temp;
+	}
 	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
 	{
 		cerr << "Error adding matrices with different dimensions." << endl;
@@ -601,6 +1007,18 @@ Matrix Matrix::operator== ( Matrix Mat2 )
 		cerr << "Error comparing an empty matrix." << endl;
 		Matrix ret;
 		return ret;
+	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		return Mat2 == temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this == temp;
 	}
 	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
 	{
@@ -657,6 +1075,18 @@ Matrix Matrix::operator!= ( Matrix Mat2 )
 		Matrix ret;
 		return ret;
 	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		return Mat2 != temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this != temp;
+	}
 	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
 	{
 		cerr << "Error comparing matrices with different dimensions." << endl;
@@ -711,6 +1141,18 @@ Matrix Matrix::operator> ( Matrix Mat2 )
 		cerr << "Error comparing an empty matrix." << endl;
 		Matrix ret;
 		return ret;
+	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		return Mat2 < temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this > temp;
 	}
 	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
 	{
@@ -767,6 +1209,18 @@ Matrix Matrix::operator< ( Matrix Mat2 )
 		Matrix ret;
 		return ret;
 	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		return Mat2 > temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this < temp;
+	}
 	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
 	{
 		cerr << "Error comparing matrices with different dimensions." << endl;
@@ -821,6 +1275,18 @@ Matrix Matrix::operator>= ( Matrix Mat2 )
 		cerr << "Error comparing an empty matrix." << endl;
 		Matrix ret;
 		return ret;
+	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		return Mat2 >= temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this >= temp;
 	}
 	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
 	{
@@ -877,6 +1343,18 @@ Matrix Matrix::operator<= ( Matrix Mat2 )
 		Matrix ret;
 		return ret;
 	}
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		return Mat2 <= temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this <= temp;
+	}
 	if( this->Ncolumns != Mat2.Ncolumns || this->Nrows != Mat2.Nrows )
 	{
 		cerr << "Error comparing matrices with different dimensions." << endl;
@@ -932,6 +1410,18 @@ Matrix Matrix::operator* ( Matrix Mat2 )
 	size_t Ncolumns2, Nrows2;
 
 	Mat2.size( &Ncolumns2, &Nrows2 );
+	if( Ncolumns == 1 && Nrows == 1 )
+	{
+		complex<double> temp;
+		getElement( &temp, 0, 0 );
+		return Mat2 * temp;
+	}
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this * temp;
+	}
 	if( this -> Ncolumns != Nrows2 )
 	{
 		cerr << "Error wrong dimensions for multiplying matrices." << endl;
@@ -997,6 +1487,12 @@ Matrix Matrix::operator* ( double factor )
 Matrix Matrix::operator/ ( Matrix Mat2 )
 {
 	Matrix ret = Mat2.inverse();
+	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
+	{
+		complex<double> temp;
+		Mat2.getElement( &temp, 0, 0 );
+		return *this / temp;
+	}
 	if( ret.isempty() )
 	{
 		Matrix ret;
@@ -1235,6 +1731,27 @@ Matrix imag( Matrix mat )
 	return ret;
 }
 
+/* Matlab: ~). */
+Matrix Matrix::operator! ()
+{
+	complex<double> dat[ Ncolumns * Nrows ];
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+		{
+			getElement( dat + i * Nrows + j, i, j );
+			if( dat[ i * Nrows + j ].imag() != 0 )
+			{
+				cerr << "Error: Applying the not operator to a complex number." << endl;
+				Matrix ret;
+				return ret;
+			}
+			dat[ i * Nrows + j ] = dat[ i * Nrows + j ].real() != 0 ? 0 : 1 ;
+		}
+	Matrix ret( dat, Ncolumns, Nrows );
+	return ret;
+}
+
+
 /* Matlab: log10(). */
 Matrix log10( Matrix mat )
 {
@@ -1251,6 +1768,148 @@ Matrix log10( Matrix mat )
 	return ret;
 }
 
+/* Matlab: mpower(). */
+Matrix mpower( Matrix mat, double p )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: power of an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	if( col != row )
+	{
+		cerr << "Error: power of a non-square matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( col == 1 )
+	{
+		complex<double> temp;
+		mat.getElement( &temp, 0, 0 );
+		temp = pow( temp, p );
+		Matrix ret( &temp, 1, 1 );
+		return ret;
+	}
+	if( p != fix( p ) )
+	{
+		cerr << "Warning: Matrix raised to a non-integer power. Rounding power." << endl;
+		p = round( p );
+	}
+	Matrix ret = mat;
+	for( size_t i = 1; i < p; i++ )
+		ret = ret * mat;
+	return ret;
+}
+/* Matlab: power() || .^ */
+Matrix power( Matrix Mata, Matrix Matb )
+{
+	if( Mata.isempty() || Matb.isempty() )
+	{
+		cerr << "Error adding an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t cola, colb, rowa, rowb;
+	Mata.size( &cola, &rowa );
+	Matb.size( &colb, &rowb );
+
+	if( cola == 1 && rowa == 1 )
+	{
+		complex<double> temp;
+		Mata.getElement( &temp, 0, 0 );
+		return power( temp, Matb );
+	}
+	if( colb == 1 && rowb == 1 )
+	{
+		complex<double> temp;
+		Matb.getElement( &temp, 0, 0 );
+		return power( Mata, temp );
+	}
+
+	if( cola != colb || rowa != rowb )
+	{
+		cerr << "Error adding matrices with different dimensions." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> complex_data[ rowa * cola ];
+	for( size_t i = 0; i < cola; i++ )
+		for( size_t j = 0; j < rowa; j++ )
+		{
+			complex<double> t1, t2;
+			Mata.getElement( &t1, i, j );
+			Matb.getElement( &t2, i, j );
+			complex_data[ i * rowa + j] = pow( t1, t2 );
+		}
+
+	Matrix ret( complex_data, cola, rowa );
+	return ret;
+}
+
+Matrix power( Matrix mat, double val )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = pow( dat[ i * rows + j ], val );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
+Matrix power( Matrix mat, std::complex<double> val )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = pow( dat[ i * rows + j ], val );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
+Matrix power( double val, Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = pow( val, dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
+Matrix power( std::complex<double> val, Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = pow( val, dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+
+}
 
 /* Matlab: pow2(). */
 Matrix pow2( Matrix mat )
@@ -1440,9 +2099,21 @@ Matrix max( Matrix mat1, Matrix mat2 )
 	mat1.size( &col1, &row1 );
 	mat2.size( &col2, &row2 );
 	
+	if( col1 == 1 && row1 == 1)
+	{
+		complex<double> temp;
+		mat1.getElement( &temp, 0, 0 );
+		return max( mat2, temp.real() );
+	}
+	if( col2 == 1 && row2 == 1)
+	{
+		complex<double> temp;
+		mat2.getElement( &temp, 0, 0 );
+		return max( mat1, temp.real() );
+	}
 	if( !( col1 == col2 && row1 == row2 ) )
 	{
-		cerr << "Error: Dimensions mismatch." << endl;
+		cerr << "Error: Max: Dimensions mismatch." << endl;
 		Matrix ret;
 		return ret;
 	}
@@ -1460,6 +2131,33 @@ Matrix max( Matrix mat1, Matrix mat2 )
 	return ret;
 }
 
+Matrix max( Matrix mat1, double val )
+{
+	size_t col1, row1;
+	mat1.size( &col1, &row1 );
+	if( mat1.isempty() )
+	{
+		cerr << "Error checking max values for an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	complex<double> dat[ col1 * row1 ], temp1;
+	for( size_t i = 0; i < col1; i++ )
+		for( size_t j = 0; j < row1; j++ )
+		{
+			mat1.getElement( &temp1, i, j );
+			dat[ i ] = temp1.real() > val ? temp1 : val;
+		}
+
+	Matrix ret( dat, col1, row1 );
+	return ret;
+}
+
+double max( double val1, double val2 )
+{
+	return val1 > val2? val1 : val2;
+}
+
 /* Matlab: min(): Two matrices. */
 Matrix min( Matrix mat1, Matrix mat2 )
 {
@@ -1469,7 +2167,7 @@ Matrix min( Matrix mat1, Matrix mat2 )
 	
 	if( !( col1 == col2 && row1 == row2 ) )
 	{
-		cerr << "Error: Dimensions mismatch." << endl;
+		cerr << "Error: Min: Dimensions mismatch." << endl;
 		Matrix ret;
 		return ret;
 	}
@@ -1488,6 +2186,32 @@ Matrix min( Matrix mat1, Matrix mat2 )
 
 }
 
+Matrix min( Matrix mat1, double val )
+{
+	size_t col1, row1;
+	mat1.size( &col1, &row1 );
+	if( mat1.isempty() )
+	{
+		cerr << "Error checking min values for an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	complex<double> dat[ col1 * row1 ], temp1;
+	for( size_t i = 0; i < col1; i++ )
+		for( size_t j = 0; j < row1; j++ )
+		{
+			mat1.getElement( &temp1, i, j );
+			dat[ i ] = temp1.real() < val ? temp1 : val;
+		}
+
+	Matrix ret( dat, col1, row1 );
+	return ret;
+}
+
+double min( double val1, double val2 )
+{
+	return val1 < val2? val1 : val2;
+}
 
 /* Matlab: sum(): One matrix. */
 Matrix sum( Matrix mat )
@@ -1495,17 +2219,31 @@ Matrix sum( Matrix mat )
 	size_t col, row;
 	mat.size( &col, &row );
 	complex<double> dat[ col ], temp;
-	for( size_t i = 0; i < col; i++ )
+	if( row == 1 )
 	{
-		dat[ i ] = complex<double>( 0, 0 );
-		for( size_t j = 0; j < row; j++ )
+		dat[ 0 ] = complex<double>(0,0);
+		for( size_t i = 0; i < col; i++ )
 		{
-			mat.getElement( &temp, i, j );
-			dat[ i ] += temp;
+			mat.getElement( &temp, i, 0 );
+			dat[ 0 ] += temp;
 		}
+		Matrix ret( dat, 1, 1 );
+		return ret;
 	}
-	Matrix ret( dat, col, 1 );
-	return ret;
+	else
+	{
+		for( size_t i = 0; i < col; i++ )
+		{
+			dat[ i ] = complex<double>( 0, 0 );
+			for( size_t j = 0; j < row; j++ )
+			{
+				mat.getElement( &temp, i, j );
+				dat[ i ] += temp;
+			}
+		}
+		Matrix ret( dat, col, 1 );
+		return ret;
+	}
 }
 
 /* Matlab: repmat(): square. */
@@ -1880,3 +2618,31 @@ Matrix flipud( Matrix mat )
 
 	return ret;
 }
+
+bool isnan( complex<double> val )
+{
+	if( isnan( val.real() ) || isnan( val.imag() ) )
+		return true;
+	return false;
+}
+/* matlab: any() */
+bool any( Matrix mat )
+{
+	size_t col, row;
+	mat.size( &col, &row );
+	complex <double> temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			if( temp != complex<double>(0,0) && !isnan( temp ) )
+				return true;
+		}
+	return false;
+}
+
+double rem( double val1, double val2 )
+{
+	return ( ( val1 / val2 ) - fix( val1 / val2 ) ) * val2 ;
+}
+
