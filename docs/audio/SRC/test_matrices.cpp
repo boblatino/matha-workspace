@@ -51,6 +51,10 @@ int main()
         mat2.getElement( &ret, 0, 1 );
 	cout << "0x1 -> " << ret << endl;
 
+	cout << "Getting element 11." <<endl;
+	mat2.getElement( &ret, 11 );
+	cout << "11 -> " << ret << endl;
+
 	cout << "Setting element 2x2." << endl;
 	mat2.setElement( 50.4, 2, 2 );
 	mat2.printout();
@@ -217,5 +221,13 @@ int main()
 	cout<< "flipud( ma ).printout();" << endl;
 	flipud( ma ).printout();
 
+	cout << "power( 10, seq(1,4) ).printout();" << endl;
+	power( 10, seq(1,4) ).printout();
+
+	cout << "power( seq( 1,2,8), 3 ).printout();" << endl;
+	power( seq( 1,2,8), 3 ).printout();
+
+	cout << "power( seq(1,4), seq(1,4) ).printout();" << endl;
+	power( seq(1,4), seq(1,4) ).printout();
 	return 0;
 }

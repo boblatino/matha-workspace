@@ -74,9 +74,567 @@ void mhvals( double d, double *out_m, double *out_h  )
 
 }
 
-void estnoisem()
-{
 
+void estnoisem( Matrix yf, estnoisem_out_stat *tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs )
+{
+	size_t nr, nrf;
+	estnoisem_alg_param qq;
+	double nrcum, subwc, ibuf, tinc;
+	Matrix actmin, actminsub, actbuf, lminflag, sn2, p, pb, pb2, pminu, ac;
+	double taca, tamax, taminh, tpfall, tbmax, qeqmin, qeqmax, av, td, nu;
+	Matrix qith, nsmdb;
+
+
+	yf.size( &nrf, &nr);		 // number of frames and freq bins
+	if( out_x != NULL )
+		*out_x = zeros(nr,nrf);			 // initialize output arrays
+	if( out_xs != NULL )
+		*out_xs = zeros(nr,nrf);			 // will hold std error in the future
+								 // no real data
+	if( yf.isempty() && out_zo != NULL )
+		*out_zo = *tz;				 // just keep the same state
+	else  // take parameters from a previous call
+	{
+		nrcum = tz->nrcum;
+		p = tz->p;				 // smoothed power spectrum
+		ac = tz->ac;				 // correction factor (9)
+		sn2 = tz->sn2;			 // estimated noise power
+		pb = tz->pb;				 // smoothed noisy speech power (20)
+		pb2 = tz->pb2;
+		pminu = tz->pminu;
+		actmin = tz->actmin;		 // Running minimum estimate
+		actminsub = tz->actminsub;// sub-window minimum estimate
+		subwc = tz->subwc;		 // force a buffer switch on first loop
+		actbuf = tz->actbuf;		 // buffer to store subwindow minima
+		ibuf = tz->ibuf;
+		lminflag = tz->lminflag;	 // flag to remember local minimum
+		tinc = tz->tinc;			 // frame increment
+		qq = tz->qq;				 // parameter structure
+	}
+
+	// unpack parameter structure
+
+	taca = qq.taca;				 // smoothing time constant for alpha_c  =  -tinc/log(0.7) in equ (11)
+	tamax = qq.tamax;			 // max smoothing time constant in (3)  =  -tinc/log(0.96)
+	taminh = qq.taminh;			 // min smoothing time constant (upper limit) in (3)  =  -tinc/log(0.3)
+	tpfall = qq.tpfall;			 // time constant for P to fall (12)
+	tbmax = qq.tbmax;			 // max smoothing time constant in (20)  =  -tinc/log(0.8)
+	qeqmin = qq.qeqmin;			 // minimum value of Qeq (23)
+	qeqmax = qq.qeqmax;			 // max value of Qeq per frame
+	av = qq.av;					 // fudge factor for bc calculation (23 + 13 lines)
+	td = qq.td;					 // time to take minimum over
+	nu = qq.nu;					 // number of subwindows
+	qith = qq.qith;				 // noise slope thresholds in dB/s
+	nsmdb = qq.nsmdb;			 // maximum permitted +ve noise slope in dB/s
+
+	// derived algorithm constants
+
+	double aca = exp( -tinc / taca );		 // smoothing constant for alpha_c in equ (11)  =  0.7
+	double acmax = aca;				 // min value of alpha_c  =  0.7 in equ (11) also  =  0.7
+	double amax = exp( -tinc / tamax );	 // max smoothing constant in (3)  =  0.96
+	double aminh = exp( -tinc / taminh );	 // min smoothing constant (upper limit) in (3)  =  0.3
+	double bmax = exp( -tinc / tbmax );	 // max smoothing constant in (20)  =  0.8
+	double snrexp  =  -tinc / tpfall;
+	double nv = round( td / ( tinc * nu ) );	 // length of each subwindow in frames
+	double nd, md, hd, mv, hv;
+
+	if( nv < 4 )				 // algorithm doesn't work for miniscule frames
+	{
+		nv = 4;
+		nu = max( round( td / ( tinc * nv ) ), 1 );
+	}
+	nd = nu * nv;					 // length of total window in frames
+	mhvals(nd, &md, &hd );		 // calculate the constants M(D) and H(D) from Table III
+	mhvals(nv, &mv, &hv );		 // calculate the constants M(D) and H(D) from Table III
+								 // [8 4 2 1.2] in paper
+	Matrix nsms = power( 10, ( nsmdb * nv * tinc / 10 ) );
+	double qeqimax = 1 / qeqmin;			 // maximum value of Qeq inverse (23)
+	double qeqimin = 1 / qeqmax;			 // minumum value of Qeq per frame inverse
+
+	if( yf.isempty() )			 // provide dummy initialization
+	{
+		ac = 1;					 // correction factor (9)
+		subwc = nv;				 // force a buffer switch on first loop
+		ibuf = 0;
+		p = *out_x;					 // smoothed power spectrum
+		sn2 = p;				 // estimated noise power
+		pb = p;					 // smoothed noisy speech power (20)
+		pb2 = power( pb, 2 );
+		pminu = p;
+								 // Running minimum estimate
+		actmin = real( ones( 1, nrf ) * INFINITY ); //repmat(Inf,1,nrf);
+		actminsub = actmin;		 // sub-window minimum estimate
+								 // buffer to store subwindow minima
+		actbuf = real( ones( nu, nrf ) * INFINITY ); //repmat(Inf,nu,nrf);
+		lminflag = zeros(1,nrf); // flag to remember local minimum
+	}
+	else
+	{
+		if( !nrcum )			 // initialize values for first frame
+		{
+			p = yf.getSubMatrix( 0, nr - 1, 0, 0 ); // yf(1,:);		 // smoothed power spectrum
+			ac = 1;				 // correction factor (9)
+			sn2 = p;			 // estimated noise power
+			pb = p;				 // smoothed noisy speech power (20)
+			pb2 = power( pb, 2);
+			pminu = p;
+								 // Running minimum estimate
+			actmin = real( ones( 1, nrf ) * INFINITY ); //repmat(Inf,1,nrf);
+			actminsub = actmin;	 // sub-window minimum estimate
+			subwc = nv;			 // force a buffer switch on first loop
+								 // buffer to store subwindow minima
+			actbuf = real( ones( nu, nrf ) * INFINITY ); //repmat(Inf,nu,nrf);
+			ibuf = 0;
+								 // flag to remember local minimum
+			lminflag = zeros(1,nrf);
+		}
+
+		// loop for each frame
+
+		for( size_t t = 0; t < nr; t++ )			 // we use t instead of lambda in the paper
+		{
+			Matrix yft = yf.getSubMatrix( 0, nr - 1, t, t ); // yf(t,:);		 // noise speech power spectrum
+								 // alpha_c-bar(t)  (9)
+			Matrix acb = power( power ( ( dotDivision( sum(p),sum(yft) ) - 1 ), 2) + 1, -1);
+								 // alpha_c(t)  (10)
+			ac = max( acb, acmax ) * ( 1 - aca ) + ac * aca;
+								 // alpha_hat: smoothing factor per frequency (11)
+			Matrix ah = power( dotProduct( ac, power( dotDivision(p,sn2)-1,2 ) + 1 ), (-1) ) * amax;    // alpha_hat: smoothing factor per frequency (11)
+			//ah = power( amax * dotProduct( ac, 1 + power( ( dotDivision( p, sn2 ) - 1 ), 2 ), -1);
+			Matrix snr = sum(p) / sum(sn2);
+								 // lower limit for alpha_hat (12)
+			ah = max( min( mpower( snr, snrexp ), aminh ), ah );
+
+								 // smoothed noisy speech power (3)
+			p = dotProduct( ah, p ) + dotProduct( ah*(-1) + 1, yft );
+			Matrix b = min( power( ah, 2 ), bmax ); // smoothing constant for estimating periodogram variance (22 + 2 lines)
+								 // smoothed periodogram (20)
+			pb = power( b, pb ) + power( b * (-1) + 1, p );
+								 // smoothed periodogram squared (21)
+			pb2 = dotProduct( b, pb2 ) + dotProduct( b * (-1) + 1, power( p, 2 ) );
+
+								 // Qeq inverse (23)
+			Matrix qeqi = max( min( dotDivision( pb2 - power( pb, 2), power( sn2, 2 ) * 2 ), qeqimax ) , qeqimin / ( t + nrcum ) );
+			Matrix qiav = sum(qeqi)/nrf; // Average over all frequencies (23+12 lines) (ignore non-duplication of DC and nyquist terms)
+			Matrix bc = sqrt( qiav ) * av + 1; // bias correction factor (23+11 lines)
+								 // we use the simplified form (17) instead of (15)
+			Matrix bmind = dotDivision( 1 - md, power( qeqi, -1 ) - md * 2 ) * ( nd - 1 ) * 2 + 1;
+								 // same expression but for sub windows
+			Matrix bminv = dotDivision( 1 - mv, power( qeqi, -1 ) - mv * 2 ) * ( nv - 1 ) * 2 + 1;
+								 // Frequency mask for new minimum
+			Matrix kmod = bc * dotProduct( p, bmind < actmin );
+			if( any( kmod ) )
+			{
+				size_t co, ro;
+				kmod.size( &co, &ro );
+				complex<double> temp;
+				Matrix t1 =bc * dotProduct( p, bmind ); 
+				Matrix t2 =bc * dotProduct( p, bminv ); 
+				for( size_t i = 0; i < co; i++ )
+					for( size_t j = 0; j < ro; j++ )
+					{
+						kmod.getElement( &temp, i, j );
+						if( temp.real() == 0 )
+							continue;
+						t1.getElement( &temp, i, j );
+						actmin.setElement( temp , i, j );
+						t2.getElement( &temp, i, j );
+						actminsub.setElement( temp , i, j );
+					}
+			}
+								 // middle of buffer - allow a local minimum
+			if( subwc>1 && subwc<nv )
+			{
+								 // potential local minimum frequency bins
+				lminflag = lminflag | kmod;
+				pminu = min(actminsub,pminu);
+				sn2 = pminu;
+			}
+			else if( subwc >= nv )	 // end of buffer - do a buffer switch
+			{
+								 // increment actbuf storage pointer
+				ibuf = 1 + rem( ibuf, nu );
+								 // save sub-window minimum
+				size_t col, row;
+				actmin.size( &col, &row );
+				complex<double> temp;
+				for( size_t i = 0; i < col ; i++ )
+				{
+					actmin.getElement( &temp, i, ibuf );
+					actbuf.setElement( temp, i, ibuf );
+				}
+				//actbuf(ibuf,:) = actmin;
+
+				pminu = min(actbuf);
+				Matrix i = find(qiav<qith);
+				//nsm = nsms(i(1));// noise slope max
+				i.getElement( &temp, 0 );
+				nsms.getElement( &temp, temp.real() );
+				double nsm = temp.real();
+				Matrix lmin = lminflag & ( !kmod ) & ( actminsub<pminu*nsm ) & ( actminsub>pminu);
+				if( any(lmin) )
+				{
+					size_t co, ro;
+					lmin.size( &co, &ro );
+					complex<double> temp;
+					for( size_t i = 0; i < co; i++ )
+						for( size_t j = 0; j < ro; j++ )
+						{
+							kmod.getElement( &temp, i, j );
+							if( temp.real() == 0 )
+								continue;
+							actminsub.getElement( &temp , i, j );
+							pminu.setElement( temp , i, j );
+							//actbuf(:,lmin) = repmat(pminu(lmin),nu,1);
+							pminu.getElement( &temp, i, 0 );
+							for( size_t k = 0; k < nu; k++ )
+								actbuf.setElement( temp, i, k );
+						}
+				}
+				lminflag.size( &col, &row );
+				lminflag = zeros( col, row );
+				actmin.size( &col, &row );
+				actmin = real( ones( col, row) * INFINITY );
+				subwc = 0;
+			}
+			subwc = subwc+1;
+			//x(t,:) = sn2;
+			size_t col, row, k = 0;
+			complex<double> temp;
+			sn2.size( &col, &row );
+			if( out_x != NULL )
+				for( size_t i = 0; i < col; i++ )
+				{
+					sn2.getElement( &temp, i, 0 );
+					out_x->setElement( temp, k++, t );
+				}
+			Matrix qisq = sqrt(qeqi);
+			// empirical formula for standard error based on Fig 15 of [2]
+			if( out_xs != NULL )
+			{
+				Matrix txs = dotProduct( sn2, sqrt( dotDivision( dotProduct(qisq * 100 + nd, qisq ) / (1+0.005*nd+6/nd), power( qeqi, -1 ) * 0.5 + nd - 1 ) * 0.266 ) );
+				complex<double> temp;
+				for( size_t i = 0; i < nrf; i++ )
+				{
+					txs.getElement( &temp, i );
+					out_xs->setElement( temp, i, t );
+				}
+			}
+		}
+	}
+	if( out_zo != NULL )				 // we need to store the state for next time
+	{
+		out_zo->nrcum = nrcum+nr;	 // number of frames so far
+		out_zo->p = p;				 // smoothed power spectrum
+		out_zo->ac = ac;				 // correction factor (9)
+		out_zo->sn2 = sn2;			 // estimated noise power
+		out_zo->pb = pb;				 // smoothed noisy speech power (20)
+		out_zo->pb2 = pb2;
+		out_zo->pminu = pminu;
+		out_zo->actmin = actmin;		 // Running minimum estimate
+		out_zo->actminsub = actminsub;// sub-window minimum estimate
+		out_zo->subwc = subwc;		 // force a buffer switch on first loop
+		out_zo->actbuf = actbuf;		 // buffer to store subwindow minima
+		out_zo->ibuf = ibuf;
+		out_zo->lminflag = lminflag;	 // flag to remember local minimum
+		out_zo->tinc = tinc;			 // must be the last one
+		out_zo->qq = qq;
+	}
+}
+
+
+void estnoisem( Matrix yf, double tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs )
+{
+	size_t nr, nrf;
+	estnoisem_alg_param qq;
+	double nrcum, subwc, ibuf, tinc;
+	Matrix actmin, actminsub, actbuf, lminflag, sn2, p, pb, pb2, pminu, ac;
+	double taca, tamax, taminh, tpfall, tbmax, qeqmin, qeqmax, av, td, nu;
+	Matrix qith, nsmdb;
+
+
+	yf.size( &nrf, &nr);		 // number of frames and freq bins
+	if( out_x != NULL )
+		*out_x = zeros(nr,nrf);			 // initialize output arrays
+	if( out_xs != NULL )
+		*out_xs = zeros(nr,nrf);			 // will hold std error in the future
+
+	tinc  =  tz;			 // second argument is frame increment
+	nrcum = 0;				 // no frames so far
+		// default algorithm constants
+
+	qq.taca = 0.0449;		 // smoothing time constant for alpha_c  =  -tinc/log(0.7) in equ (11)
+	qq.tamax = 0.392;		 // max smoothing time constant in (3)  =  -tinc/log(0.96)
+	qq.taminh = 0.0133;		 // min smoothing time constant (upper limit) in (3)  =  -tinc/log(0.3)
+	qq.tpfall = 0.064;		 // time constant for P to fall (12)
+	qq.tbmax = 0.0717;		 // max smoothing time constant in (20)  =  -tinc/log(0.8)
+	qq.qeqmin = 2;			 // minimum value of Qeq (23)
+	qq.qeqmax = 14;			 // max value of Qeq per frame
+	qq.av = 2.12;			 // fudge factor for bc calculation (23 + 13 lines)
+	qq.td = 1.536;			 // time to take minimum over
+	qq.nu = 8;				 // number of subwindows
+								 // noise slope thresholds in dB/s
+	double r[] = {0.03,0.05,0.06,INFINITY}; 
+	double r2[] = {47,31.4,15.7,4.1}; 
+	qq.qith = Matrix(r,4,1) ;
+	qq.nsmdb = Matrix(r2,4,1);;
+
+	if( pp != NULL )
+	{
+		if( !isnan( pp->taca ) )
+			qq.taca = pp->taca;
+		if( !isnan( pp->tamax ) )
+			qq.tamax = pp->tamax;
+		if( !isnan( pp->taminh ) )
+			qq.taminh = pp->taminh;
+		if( !isnan( pp->tpfall ) )
+			qq.tpfall = pp->tpfall;
+		if( !isnan( pp->tbmax ) )
+			qq.tbmax = pp->tbmax;
+		if( !isnan( pp->qeqmin ) )
+			qq.qeqmin = pp->qeqmin;
+		if( !isnan( pp->qeqmax ) )
+			qq.qeqmax = pp->qeqmax;
+		if( !isnan( pp->av ) )
+			qq.av = pp->av;
+		if( !isnan( pp->td ) )
+			qq.td = pp->td;
+		if( !isnan( pp->nu ) )
+			qq.nu = pp->nu;
+		if( !pp->qith.isempty() )
+			qq.qith = pp->qith;
+		if( !pp->nsmdb.isempty() )
+			qq.nsmdb = pp->nsmdb;
+	}
+
+	// unpack parameter structure
+
+	taca = qq.taca;				 // smoothing time constant for alpha_c  =  -tinc/log(0.7) in equ (11)
+	tamax = qq.tamax;			 // max smoothing time constant in (3)  =  -tinc/log(0.96)
+	taminh = qq.taminh;			 // min smoothing time constant (upper limit) in (3)  =  -tinc/log(0.3)
+	tpfall = qq.tpfall;			 // time constant for P to fall (12)
+	tbmax = qq.tbmax;			 // max smoothing time constant in (20)  =  -tinc/log(0.8)
+	qeqmin = qq.qeqmin;			 // minimum value of Qeq (23)
+	qeqmax = qq.qeqmax;			 // max value of Qeq per frame
+	av = qq.av;					 // fudge factor for bc calculation (23 + 13 lines)
+	td = qq.td;					 // time to take minimum over
+	nu = qq.nu;					 // number of subwindows
+	qith = qq.qith;				 // noise slope thresholds in dB/s
+	nsmdb = qq.nsmdb;			 // maximum permitted +ve noise slope in dB/s
+
+	// derived algorithm constants
+
+	double aca = exp( -tinc / taca );		 // smoothing constant for alpha_c in equ (11)  =  0.7
+	double acmax = aca;				 // min value of alpha_c  =  0.7 in equ (11) also  =  0.7
+	double amax = exp( -tinc / tamax );	 // max smoothing constant in (3)  =  0.96
+	double aminh = exp( -tinc / taminh );	 // min smoothing constant (upper limit) in (3)  =  0.3
+	double bmax = exp( -tinc / tbmax );	 // max smoothing constant in (20)  =  0.8
+	double snrexp  =  -tinc / tpfall;
+	double nv = round( td / ( tinc * nu ) );	 // length of each subwindow in frames
+	double nd, md, hd, mv, hv;
+
+	if( nv < 4 )				 // algorithm doesn't work for miniscule frames
+	{
+		nv = 4;
+		nu = max( round( td / ( tinc * nv ) ), 1 );
+	}
+	nd = nu * nv;					 // length of total window in frames
+	mhvals(nd, &md, &hd );		 // calculate the constants M(D) and H(D) from Table III
+	mhvals(nv, &mv, &hv );		 // calculate the constants M(D) and H(D) from Table III
+								 // [8 4 2 1.2] in paper
+	Matrix nsms = power( 10, ( nsmdb * nv * tinc / 10 ) );
+	double qeqimax = 1 / qeqmin;			 // maximum value of Qeq inverse (23)
+	double qeqimin = 1 / qeqmax;			 // minumum value of Qeq per frame inverse
+
+	if( yf.isempty() )			 // provide dummy initialization
+	{
+		ac = 1;					 // correction factor (9)
+		subwc = nv;				 // force a buffer switch on first loop
+		ibuf = 0;
+		p = *out_x;					 // smoothed power spectrum
+		sn2 = p;				 // estimated noise power
+		pb = p;					 // smoothed noisy speech power (20)
+		pb2 = power( pb, 2 );
+		pminu = p;
+								 // Running minimum estimate
+		actmin = real( ones( 1, nrf ) * INFINITY ); //repmat(Inf,1,nrf);
+		actminsub = actmin;		 // sub-window minimum estimate
+								 // buffer to store subwindow minima
+		actbuf = real( ones( nu, nrf ) * INFINITY ); //repmat(Inf,nu,nrf);
+		lminflag = zeros(1,nrf); // flag to remember local minimum
+	}
+	else
+	{
+		if( !nrcum )			 // initialize values for first frame
+		{
+			p = yf.getSubMatrix( 0, nr - 1, 0, 0 ); // yf(1,:);		 // smoothed power spectrum
+			ac = 1;				 // correction factor (9)
+			sn2 = p;			 // estimated noise power
+			pb = p;				 // smoothed noisy speech power (20)
+			pb2 = power( pb, 2);
+			pminu = p;
+								 // Running minimum estimate
+			actmin = real( ones( 1, nrf ) * INFINITY ); //repmat(Inf,1,nrf);
+			actminsub = actmin;	 // sub-window minimum estimate
+			subwc = nv;			 // force a buffer switch on first loop
+								 // buffer to store subwindow minima
+			actbuf = real( ones( nu, nrf ) * INFINITY ); //repmat(Inf,nu,nrf);
+			ibuf = 0;
+								 // flag to remember local minimum
+			lminflag = zeros(1,nrf);
+		}
+
+		// loop for each frame
+
+		for( size_t t = 0; t < nr; t++ )			 // we use t instead of lambda in the paper
+		{
+			Matrix yft = yf.getSubMatrix( 0, nr - 1, t, t ); // yf(t,:);		 // noise speech power spectrum
+								 // alpha_c-bar(t)  (9)
+			Matrix acb = power( power ( ( dotDivision( sum(p),sum(yft) ) - 1 ), 2) + 1, -1);
+								 // alpha_c(t)  (10)
+			ac = max( acb, acmax ) * ( 1 - aca ) + ac * aca;
+								 // alpha_hat: smoothing factor per frequency (11)
+			Matrix ah = power( dotProduct( ac, power( dotDivision(p,sn2)-1,2 ) + 1 ), (-1) ) * amax;    // alpha_hat: smoothing factor per frequency (11)
+			//ah = power( amax * dotProduct( ac, 1 + power( ( dotDivision( p, sn2 ) - 1 ), 2 ), -1);
+			Matrix snr = sum(p) / sum(sn2);
+								 // lower limit for alpha_hat (12)
+			ah = max( min( mpower( snr, snrexp ), aminh ), ah );
+
+								 // smoothed noisy speech power (3)
+			p = dotProduct( ah, p ) + dotProduct( ah*(-1) + 1, yft );
+			Matrix b = min( power( ah, 2 ), bmax ); // smoothing constant for estimating periodogram variance (22 + 2 lines)
+								 // smoothed periodogram (20)
+			pb = dotProduct( b, pb ) + dotProduct( b * (-1) + 1, p );
+								 // smoothed periodogram squared (21)
+			pb2 = dotProduct( b, pb2 ) + dotProduct( b * (-1) + 1, power( p, 2 ) );
+
+								 // Qeq inverse (23)
+			Matrix qeqi = max( min( dotDivision( pb2 - power( pb, 2), power( sn2, 2 ) * 2 ), qeqimax ) , qeqimin / ( t + 1 + nrcum ) );
+			Matrix qiav = sum(qeqi)/nrf; // Average over all frequencies (23+12 lines) (ignore non-duplication of DC and nyquist terms)
+			Matrix bc = sqrt( qiav ) * av + 1; // bias correction factor (23+11 lines)
+								 // we use the simplified form (17) instead of (15)
+			Matrix bmind = dotDivision( 1 - md, power( qeqi, -1 ) - md * 2 ) * ( nd - 1 ) * 2 + 1;
+								 // same expression but for sub windows
+			Matrix bminv = dotDivision( 1 - mv, power( qeqi, -1 ) - mv * 2 ) * ( nv - 1 ) * 2 + 1;
+								 // Frequency mask for new minimum
+			Matrix kmod = ( bc * dotProduct( p, bmind) ) < actmin ;
+
+			if( any( kmod ) )
+			{
+				size_t co, ro;
+				kmod.size( &co, &ro );
+				complex<double> temp;
+				Matrix t1 =bc * dotProduct( p, bmind ); 
+				Matrix t2 =bc * dotProduct( p, bminv ); 
+				for( size_t i = 0; i < co; i++ )
+					for( size_t j = 0; j < ro; j++ )
+					{
+						kmod.getElement( &temp, i, j );
+						if( temp.real() == 0 )
+							continue;
+						t1.getElement( &temp, i, j );
+						actmin.setElement( temp , i, j );
+						t2.getElement( &temp, i, j );
+						actminsub.setElement( temp , i, j );
+					}
+			}
+			if( subwc>1 && subwc<nv )
+			{
+								 // potential local minimum frequency bins
+				lminflag = lminflag | kmod;
+				pminu = min(actminsub,pminu);
+				sn2 = pminu;
+			}
+			else if( subwc >= nv )	 // end of buffer - do a buffer switch
+			{
+								 // increment actbuf storage pointer
+				ibuf = 1 + rem( ibuf, nu );
+								 // save sub-window minimum
+				size_t col, row;
+				actmin.size( &col, &row );
+				complex<double> temp;
+				for( size_t i = 0; i < col ; i++ )
+				{
+					actmin.getElement( &temp, i, ibuf - 1 );
+					actbuf.setElement( temp, i, ibuf - 1 );
+				}
+				//actbuf(ibuf,:) = actmin;
+
+				pminu = min(actbuf);
+				Matrix i = find(qiav<qith);
+				//nsm = nsms(i(1));// noise slope max
+				i.getElement( &temp, 0 );
+				nsms.getElement( &temp, temp.real() );
+				double nsm = temp.real();
+				Matrix lmin = lminflag & ( !kmod ) & ( actminsub<pminu*nsm ) & ( actminsub>pminu );
+				if( any(lmin) )
+				{
+					size_t co, ro;
+					lmin.size( &co, &ro );
+					complex<double> temp;
+					for( size_t i = 0; i < co; i++ )
+						for( size_t j = 0; j < ro; j++ )
+						{
+							kmod.getElement( &temp, i, j );
+							if( temp.real() == 0 )
+								continue;
+							actminsub.getElement( &temp , i, j );
+							pminu.setElement( temp , i, j );
+							//actbuf(:,lmin) = repmat(pminu(lmin),nu,1);
+							pminu.getElement( &temp, i, 0 );
+							for( size_t k = 0; k < nu; k++ )
+								actbuf.setElement( temp, i, k );
+						}
+				}
+				lminflag.size( &col, &row );
+				lminflag = zeros( row, col );
+				actmin.size( &col, &row );
+				actmin = real( ones( row, col ) * INFINITY );
+				subwc = 0;
+			}
+			subwc = subwc+1;
+			//x(t,:) = sn2;
+			size_t col, row, k = 0;
+			complex<double> temp;
+			sn2.size( &col, &row );
+			if( out_x != NULL )
+				for( size_t i = 0; i < col; i++ )
+				{
+					sn2.getElement( &temp, i, 0 );
+					out_x->setElement( temp, k++, t );
+				}
+			Matrix qisq = sqrt(qeqi);
+			// empirical formula for standard error based on Fig 15 of [2]
+			if( out_xs != NULL )
+			{
+				Matrix txs = dotProduct( sn2, sqrt( dotDivision( dotProduct(qisq * 100 + nd, qisq ) / (1+0.005*nd+6/nd), power( qeqi, -1 ) * 0.5 + nd - 1 ) * 0.266 ) );
+				complex<double> temp;
+				for( size_t i = 0; i < nrf; i++ )
+				{
+					txs.getElement( &temp, i );
+					out_xs->setElement( temp, i, t );
+				}
+			}
+		}
+	}
+	if( out_zo != NULL )				 // we need to store the state for next time
+	{
+		out_zo->nrcum = nrcum+nr;	 // number of frames so far
+		out_zo->p = p;				 // smoothed power spectrum
+		out_zo->ac = ac;				 // correction factor (9)
+		out_zo->sn2 = sn2;			 // estimated noise power
+		out_zo->pb = pb;				 // smoothed noisy speech power (20)
+		out_zo->pb2 = pb2;
+		out_zo->pminu = pminu;
+		out_zo->actmin = actmin;		 // Running minimum estimate
+		out_zo->actminsub = actminsub;// sub-window minimum estimate
+		out_zo->subwc = subwc;		 // force a buffer switch on first loop
+		out_zo->actbuf = actbuf;		 // buffer to store subwindow minima
+		out_zo->ibuf = ibuf;
+		out_zo->lminflag = lminflag;	 // flag to remember local minimum
+		out_zo->tinc = tinc;			 // must be the last one
+		out_zo->qq = qq;
+	}
 }
 
 
@@ -249,9 +807,6 @@ Matrix irfft( Matrix y, size_t n )
 	else
 		v = y.transpose();
 
-//	if nargin<2 || isempty(n)
-//		n=2*m-2;        // default output length
-//	else
 	size_t mm = 1 + fix( n / 2 );          // expected input length
 	if( mm > m )
 	{
@@ -263,7 +818,6 @@ Matrix irfft( Matrix y, size_t n )
 	else if( mm < m )
 		v = v.getSubMatrix( 0, col - 1, 0, mm - 1 );
 	m = mm;
-//	end
 
 	if( n % 2 )		// odd output length
 	{

@@ -48,5 +48,84 @@ int main()
 	cout << "irfft( mr3, 5, 2 ).printout();" << endl;
 	irfft( mr3, 5, 2 ).printout();
 
+	Matrix xo, xs;
+	estnoisem_out_stat zo;
+	cout << "estnoisem( m1, 3, NULL, &xo, &zo, &xs );" << endl;
+	estnoisem( m1, 3, NULL, &xo, &zo, &xs );
+	xo.printout();
+	cout << "xs" << endl;
+	xs.printout();
+
+	cout << "zo:" << endl;
+	cout << endl << "double nrcum;";
+	cout << zo.nrcum;
+	cout << endl <<	"Matrix p;";
+	zo.p.printout();
+	cout << endl <<	"Matrix ac;";
+	zo.ac.printout();
+	cout << endl <<	"Matrix sn2;";
+	zo.sn2.printout();
+	cout << endl <<	"Matrix pb;";
+	zo.pb.printout();
+	cout << endl <<	"Matrix pb2;";
+	zo.pb2.printout();
+	cout << endl <<	"Matrix pminu;";
+	zo.pminu.printout();
+	cout << endl <<	"Matrix actmin;";
+	zo.actmin.printout();
+	cout << endl <<	"Matrix actminsub;";
+	zo.actminsub.printout();
+	cout << endl <<	"double subwc;";
+	cout << zo.subwc;
+	cout << endl <<	"Matrix actbuf;";
+	zo.actbuf.printout();
+	cout << endl <<	"double ibuf;";
+	cout << zo.ibuf;
+	cout << endl <<	"Matrix lminflag;";
+	zo.lminflag.printout();
+	cout << endl <<	"double tinc;";
+	cout << zo.tinc;
+	cout << endl <<	"estnoisem_alg_param qq;";
+//	estnoisem_alg_param qq;
+
+	cout << "estnoisem( m1, zo, NULL, &xo, &zo, &xs );" << endl;
+	estnoisem( m1, &zo, NULL, &xo, &zo, &xs );
+	xo.printout();
+	cout << "xs" << endl;
+	xs.printout();
+
+	cout << "zo:" << endl;
+	cout << endl << "double nrcum;";
+	cout << zo.nrcum;
+	cout << endl <<	"Matrix p;";
+	zo.p.printout();
+	cout << endl <<	"Matrix ac;";
+	zo.ac.printout();
+	cout << endl <<	"Matrix sn2;";
+	zo.sn2.printout();
+	cout << endl <<	"Matrix pb;";
+	zo.pb.printout();
+	cout << endl <<	"Matrix pb2;";
+	zo.pb2.printout();
+	cout << endl <<	"Matrix pminu;";
+	zo.pminu.printout();
+	cout << endl <<	"Matrix actmin;";
+	zo.actmin.printout();
+	cout << endl <<	"Matrix actminsub;";
+	zo.actminsub.printout();
+	cout << endl <<	"double subwc;";
+	cout << zo.subwc;
+	cout << endl <<	"Matrix actbuf;";
+	zo.actbuf.printout();
+	cout << endl <<	"double ibuf;";
+	cout << zo.ibuf;
+	cout << endl <<	"Matrix lminflag;";
+	zo.lminflag.printout();
+	cout << endl <<	"double tinc;";
+	cout << zo.tinc;
+	cout << endl <<	"estnoisem_alg_param qq;";
+//	estnoisem_alg_param qq;
+
+
 	return 0;
 }

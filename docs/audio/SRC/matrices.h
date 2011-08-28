@@ -31,6 +31,8 @@ class Matrix
 
 		/* Arithmatic operators. */
 		Matrix operator= ( Matrix );
+		Matrix operator= ( std::complex<double> );
+		Matrix operator= ( double );
 		Matrix operator+ ( Matrix );
 		Matrix operator+ ( std::complex<double> );
 		Matrix operator+ ( double );
@@ -73,6 +75,13 @@ class Matrix
 		Matrix operator<= ( std::complex<double> );
 		Matrix operator<= ( double );
 
+		Matrix operator| ( Matrix );
+		Matrix operator| ( double );
+		Matrix operator& ( Matrix );
+		Matrix operator& ( double );
+
+		Matrix operator! ();
+
 		/* Matrix operations. */
 		Matrix inverse();
 		Matrix transpose();
@@ -81,8 +90,10 @@ class Matrix
 
 		/* Element manipulation. */
 		int getElement( std::complex <double> *, size_t col, size_t row);
+		int getElement( std::complex <double> *, size_t );
 		int setElement( std::complex <double>, size_t col, size_t row);
 		int setElement( double, size_t col, size_t row);
+		int setElement( std::complex <double>, size_t );
 		Matrix getSubMatrix( size_t start_col, size_t end_col, size_t start_row, size_t end_row );
 
 		/* Miscellaneous. */
@@ -103,8 +114,16 @@ class Matrix
 
 
 /* Arithmatic functions. */
-Matrix dotProduct( Matrix , Matrix  );
-Matrix dotDivision( Matrix , Matrix  );
+Matrix dotProduct( Matrix, Matrix );
+Matrix dotProduct( Matrix, std::complex<double> );
+Matrix dotProduct( Matrix, double );
+Matrix dotProduct( std::complex<double>, Matrix );
+Matrix dotProduct( double, Matrix );
+Matrix dotDivision( Matrix, Matrix );
+Matrix dotDivision( Matrix, std::complex<double> );
+Matrix dotDivision( Matrix, double );
+Matrix dotDivision( std::complex<double>, Matrix );
+Matrix dotDivision( double, Matrix );
 
 /* Matlab: exp(). */
 Matrix exp( Matrix );
@@ -115,10 +134,14 @@ Matrix round( Matrix );
 /* Matlab: max(). */
 Matrix max( Matrix, Matrix );
 Matrix max( Matrix );
+Matrix max( Matrix, double );
+double max( double, double );
 
 /* Matlab: min(). */
 Matrix min( Matrix, Matrix );
 Matrix min( Matrix );
+Matrix min( Matrix, double );
+double min( double, double );
 
 /* Matlab: repmat(). */
 Matrix repmat( Matrix, size_t n );
@@ -135,6 +158,16 @@ Matrix sqrt( Matrix );
 
 /* Matlab: find(). */
 Matrix find( Matrix );
+
+/* Matlab: mpower(). */
+Matrix mpower( Matrix, double );
+
+/* Matlab: power() || .^ */
+Matrix power( Matrix, Matrix );
+Matrix power( Matrix, double );
+Matrix power( Matrix, std::complex<double> );
+Matrix power( double, Matrix );
+Matrix power( std::complex<double>, Matrix );
 
 /* Matlab: pow2(). */
 Matrix pow2( Matrix );
@@ -204,5 +237,11 @@ Matrix seq( double start, double step, double end );
 double fix( double val );
 std::complex<double> fix( std::complex<double> val );
 Matrix fix( Matrix mat );
+
+/* matlab: any() */
+bool any( Matrix );
+
+/* matlab: rem() */
+double rem( double val1, double val2 );
 
 #endif //__MATRICES_H__
