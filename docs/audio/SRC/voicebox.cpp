@@ -75,10 +75,10 @@ void mhvals( double d, double *out_m, double *out_h  )
 }
 
 
-void estnoisem( Matrix yf, estnoisem_out_stat *tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs )
+void estnoisem( Matrix yf, estnoisem_out_stat *tz, alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs )
 {
 	size_t nr, nrf;
-	estnoisem_alg_param qq;
+	alg_param qq;
 	double nrcum, subwc, ibuf, tinc;
 	Matrix actmin, actminsub, actbuf, lminflag, sn2, p, pb, pb2, pminu, ac;
 	double taca, tamax, taminh, tpfall, tbmax, qeqmin, qeqmax, av, td, nu;
@@ -345,10 +345,10 @@ ah = real(ah);
 }
 
 
-void estnoisem( Matrix yf, double tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs )
+void estnoisem( Matrix yf, double tz, alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs )
 {
 	size_t nr, nrf;
-	estnoisem_alg_param qq;
+	alg_param qq;
 	double nrcum, subwc, ibuf, tinc;
 	Matrix actmin, actminsub, actbuf, lminflag, sn2, p, pb, pb2, pminu, ac;
 	double taca, tamax, taminh, tpfall, tbmax, qeqmin, qeqmax, av, td, nu;
@@ -496,12 +496,6 @@ void estnoisem( Matrix yf, double tz, estnoisem_alg_param *pp, Matrix *out_x, es
 acb = real(acb);								 // alpha_c(t)  (10)
 			ac = max( acb, acmax ) * ( 1 - aca ) + ac * aca;
 								 // alpha_hat: smoothing factor per frequency (11)
-p.printout();
-sn2.printout();
-cout << amax << endl;
-dotDivision(p,sn2).printout();
-power( dotDivision(p,sn2)-1,2).printout();
-power(power( dotDivision(p,sn2)-1,2) + 1,-1).printout();
 
             //ah=amax*ac.*(1+(p./sn2-1).^2).^(-1)    % alpha_hat: smoothing factor per frequency (11)
 			Matrix ah = dotProduct( power(  power( dotDivision(p,sn2)-1,2 ) + 1 , (-1) ), ac ) * amax;    // alpha_hat: smoothing factor per frequency (11)
@@ -510,8 +504,6 @@ ah = real(ah);
 			Matrix snr = sum(p) / sum(sn2);
 								 // lower limit for alpha_hat (12)
 			ah = max( min( mpower( snr, snrexp ), aminh ), ah );
-snr.printout();
-cout << snrexp << endl;
 
 								 // smoothed noisy speech power (3)
 			p = dotProduct( ah, p ) + dotProduct( ah*(-1) + 1, yft );
@@ -650,12 +642,345 @@ cout << snrexp << endl;
 	}
 }
 
-
-void specsub()
+void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Matrix *out_ss, specsub_out_stat *out_zo )
 {
+	double fs, ni;
+	size_t col, row;
+	Matrix ypf, mzf, af, dpf, v, bf;
+	alg_param qq;
+	alg_param qp;
+	complex<double> temp, temp2;
 
+// fsz struct
+/*
+	fs = fsz.fs;
+	qq = fsz.qq;
+	qp = fsz.qp;
+	ze = fsz.ze;
+							 // allocate space for speech
+	si.size( &col, &row );
+	s = zeros( length( fsz.si ) + col * row, 1 );
+	//s(1:length(fsz.si))=fsz.si;
+	for( size_t i = 0; i < length( fsz.si ); i++ )
+	{
+		fsz.si.getElement( &temp, i );
+		s.setElement( temp, i );
+	}
+	//s(length(fsz.si)+1:end)=si(:);
+	for( size_t i = length( fsz.si ); i < length( fsz.si ) + col * row; i++ )
+	{
+		si.getElement( &temp, i - length( fsz.si ) );
+		s.setElement( temp, i );
+*/
+// end of struct
+
+// fsz double
+
+	fs=fsz;					 // sample frequency
+	si.size( &col, &row );
+	Matrix s = si.reshape( col * row, 1 );
+	// default algorithm constants
+	qq.of=2;				 // overlap factor = (fft length)/(frame increment)
+	qq.ti=16e-3;			 // desired frame increment (16 ms)
+	qq.ri=0;				 // round ni to the nearest power of 2
+	qq.g=1;					 // subtraction domain: 1=magnitude, 2=power
+	qq.e=1;					 // gain exponent
+	qq.am=3;				 // max oversubtraction factor
+	qq.b=0.01;				 // noise floor
+	qq.al=-5;				 // SNR for maximum a (set to Inf for fixed a)
+	qq.ah=20;				 // SNR for minimum a
+	qq.bt=-1;				 // suppress binary masking
+	qq.mx=0;				 // no input mixing
+	qq.gh=1;				 // maximum gain
+	if( pp != NULL )
+	{
+		qp = *pp;				 // save for estnoisem call
+		if( !isnan( pp->taca ) )
+			qq.taca = pp->taca;
+		if( !isnan( pp->tamax ) )
+			qq.tamax = pp->tamax;
+		if( !isnan( pp->taminh ) )
+			qq.taminh = pp->taminh;
+		if( !isnan( pp->tpfall ) )
+			qq.tpfall = pp->tpfall;
+		if( !isnan( pp->tbmax ) )
+			qq.tbmax = pp->tbmax;
+		if( !isnan( pp->qeqmin ) )
+			qq.qeqmin = pp->qeqmin;
+		if( !isnan( pp->qeqmax ) )
+			qq.qeqmax = pp->qeqmax;
+		if( !isnan( pp->av ) )
+			qq.av = pp->av;
+		if( !isnan( pp->td ) )
+			qq.td = pp->td;
+		if( !isnan( pp->nu ) )
+			qq.nu = pp->nu;
+		if( !pp->qith.isempty() )
+			qq.qith = pp->qith;
+		if( !pp->nsmdb.isempty() )
+			qq.nsmdb = pp->nsmdb;
+	}
+
+// end of double
+
+	// derived algorithm constants
+	if( qq.ri )
+	{
+		ni = pow( 2, ceil( log2 ( ( qq.ti * fs * sqrt(0.5) ) ) ) );
+	}
+	else
+	{
+						 // frame increment in samples
+		ni = round( qq.ti * fs );
+	}
+	double tinc = ni / fs;			 // true frame increment time
+
+	// calculate power spectrum in frames
+	double no=round(qq.of);	 // integer overlap factor
+	double nf=ni*no;			 // fft length
+	Matrix w=sqrt(hamming(nf+1)).transpose();
+	w.size( &col, &row );
+	w.delColumn( col - 1 );
+	//w(end)=[]; // for now always use sqrt hamming window
+						 // normalize to give overall gain of 1
+	//w=w/sqrt(sum(w( 1:ni:nf ).^2));
+	temp = complex<double>( 0, 0 );
+	for( size_t i = 0; i < nf; i++ )
+	{
+		w.getElement( &temp, i );
+		temp2 += pow( temp, 2 );
+	}
+	w = w / sqrt( temp2 );
+
+	Matrix y=enframe(s,w,ni);
+	Matrix yf=rfft(y,nf,2);
+	Matrix yp=dotProduct( yf, conj( yf ) );	 // power spectrum of input speech
+	size_t nr, nf2;
+	yp.size( &nf2, &nr );	 // number of frames
+
+//fsz struct
+/*
+						 // estimate the noise using minimum statistics
+		estnoisem( yp, ze, NULL, &dp, &ze, NULL );
+		ssv = fsz.ssv;
+*/
+//end of struct
+
+//fsz double						 // estimate the noise using minimum statistics
+	Matrix dp;
+	estnoisem_out_stat ze;
+	estnoisem( yp, tinc, &qp, &dp, &ze, NULL );
+						 // dummy saved overlap
+	Matrix ssv=zeros(ni*(no-1),1);
+//end of double
+	
+	if( !nr )			 // no data frames
+	{
+		Matrix emp;
+		*out_ss = emp;
+	}
+	else
+	{
+		Matrix mz = ( yp == 0 );		 //  mask for zero power time-frequency bins (unlikely)
+		if( qq.al < INFINITY )
+		{
+			ypf=sum(yp,2);
+			dpf=sum(dp,2);
+			mzf=( dpf==0 );	 // zero noise frames = very high SNR
+			af = ( min( max( log10( dotDivision( ypf,dpf+mzf) ) * 10, qq.al ), qq.ah ) - qq.ah )/( qq.al - qq.ah ) * (qq.am-1) + 1;
+			//af( mzf ) = 1;	 // fix the zero noise frames
+			af.size( &col, &row );
+			for( size_t i = 0; i < row; i++ )
+			{
+				mzf.getElement( &temp, 0, i );
+				if( temp.real() == 1 )
+					af.setElement( complex<double>( 1, 0 ), 0, i );
+			}
+		}
+		else
+		{
+			Matrix tempmat;
+			tempmat = qq.am;
+			af=repmat(tempmat,nr,1);
+		}
+		if( qq.g == 1)		 // magnitude domain subtraction
+		{
+			v = sqrt( dotDivision( dp, yp + mz ) );
+			af = sqrt( af );
+			bf = sqrt( qq.b );
+		}
+		else if( qq.g == 2)		 // power domain subtraction
+		{
+			v = dotDivision( dp, yp + mz );
+			bf = qq.b;
+		}
+		else	 // arbitrary subtraction domain
+		{
+			v = power( dotDivision( dp, yp + mz ), qq.g * 0.5);
+			af = power( af, qq.g * 0.5 );
+			bf = pow( qq.b,  qq.g * 0.5 );
+		}
+						 // replicate frame oversubtraction factors for each frequency
+		af = repmat( af, 1, nf2 );
+						 // mask for noise floor limiting
+		Matrix mf = v >= power( af + bf, -1);
+		v.size( &col, &row);
+		Matrix g = zeros( row, col );
+		double eg = qq.e / qq.g;	 // gain exponent relative to subtraction domain
+		double gh = qq.gh;
+
+		mf.size( &col, &row );
+		if( eg == 1 )		 // Normal case
+		{
+					 // never give a gain > 1
+			for( size_t i = 0; i < col; i++)
+				for( size_t j = 0; j < row; j++ )
+				{
+					mf.getElement( &temp, i, j );
+					if( temp.real() )
+					{
+						//g(mf)=min(bf*v(mf),gh);
+						v.getElement( &temp2, i, j );
+						Matrix tem = min( bf * temp2, gh );
+						tem.getElement( &temp, 0 );
+						g.setElement( temp, i, j );
+					}
+					else
+					{
+						//g(~mf)=1-af(~mf).*v(~mf);
+						v.getElement( &temp2, i, j );
+						af.getElement( &temp, i, j );
+						temp = temp * temp2 * (double)(-1) + (double)1;
+						g.setElement( temp, i, j );
+
+					}
+				}
+		}
+		else if( eg == 0.5 )
+		{
+			for( size_t i = 0; i < col; i++)
+				for( size_t j = 0; j < row; j++ )
+				{
+					mf.getElement( &temp, i, j );
+					if( temp.real() )
+					{
+						//g(mf)=min(sqrt(bf*v(mf)),gh);
+						v.getElement( &temp2, i, j );
+						Matrix tem = min( sqrt( bf * temp2 ), gh );
+						tem.getElement( &temp, 0 );
+						g.setElement( temp, i, j );
+					}
+					else
+					{
+						//g(~mf)=sqrt(1-af(~mf).*v(~mf));
+						v.getElement( &temp2, i, j );
+						af.getElement( &temp, i, j );
+						temp = sqrt( temp * temp2 * (double)(-1) + (double)1 );
+						g.setElement( temp, i, j );
+
+					}
+				}
+		}
+		else
+		{
+			for( size_t i = 0; i < col; i++)
+				for( size_t j = 0; j < row; j++ )
+				{
+					mf.getElement( &temp, i, j );
+					if( temp.real() )
+					{
+						//g(mf)=min((bf*v(mf)).^eg,gh);
+						v.getElement( &temp2, i, j );
+						Matrix tem = min( power( bf * temp2, eg ), gh );
+						tem.getElement( &temp, 0 );
+						g.setElement( temp, i, j );
+					}
+					else
+					{
+						//g(~mf)=(1-af(~mf).*v(~mf)).^eg;
+						v.getElement( &temp2, i, j );
+						af.getElement( &temp, i, j );
+						temp = pow( temp * temp2 * (double)(-1) + (double)1, eg );
+						g.setElement( temp, i, j );
+
+					}
+				}
+		}
+		if( qq.bt >= 0 )
+		{
+			g = g > qq.bt;
+		}
+						 // mix in some of the input
+		g = g * ( 1 - qq.mx ) + qq.mx;
+						 // inverse dft and apply output window
+		Matrix se = dotProduct ( irfft( dotProduct(yf,g).transpose(), nf ).transpose(), repmat(w,nr,1) );
+						 // space for overlapped output speech
+		*out_ss = zeros( ni * ( nr + no - 1 ), no );
+		//out_ss(1:ni*(no-1),end)=ssv;
+		for( size_t i = 0; i < ni * ( no - 1); i++ )
+		{
+			ssv.getElement( &temp, i );
+			out_ss->setElement( temp, no - 1, i );
+		}
+		for( size_t i = 0; i < no; i++ )
+		{
+						 // number of samples in this set
+			double nm = nf * ( 1 + floor( ( nr - (i+1) ) / no ) );
+			//ss( 1+(i-1)*ni : nm+(i-1)*ni , i ) = reshape( se( i : no : nr , : )', nm, 1 )
+			Matrix tempmat;
+			se.size( &col, &row );
+			for( size_t j = i; i < nr; i += no )
+				for( size_t k = 0; k < row; k++ )
+				{
+					se.getElement( &temp, j, k );
+					tempmat.addRow( &temp, 1 );
+				}
+			size_t k = 0;
+			for( size_t j = ( i - 1 ) * ni; j < nm + ( i - 1 ) * ni; i++ )
+			{
+				se.getElement( &temp, k++ );
+				out_ss->setElement( temp, i, j );
+			}
+		}
+		*out_ss = sum( *out_ss, 2 );
+	}
+	if( out_zo != NULL )
+	{
+		if( nr )
+		{
+						 // save the output tail for next time
+
+			out_ss->size( &col, &row );
+			*out_ss = reshape( *out_ss, 1, col * row );
+			//out_zo->ssv=out_ss(end-ni*(no-1)+1:end);
+			//out_ss( end - ni * (no-1) + 1 : end )=[];
+			for( size_t i = col * row - ni * ( no - 1 ); i < col * row; i++ )
+			{
+				out_ss->getElement( &temp, col * row - ni * ( no - 1 ) );
+				out_zo->ssv.addColumn( &temp, 1 );
+				out_ss->delColumn( col * row - ni * ( no - 1 ) );
+			}
+		}
+		else
+		{
+			out_zo->ssv=ssv;	 //
+		}
+						 // save the tail end of the input speech signal
+		//out_zo->si = s( length( *out_ss ) + 1 : end );
+		s.size( &col, &row );
+		Matrix emptymat;
+		out_zo->si = emptymat;
+		for( size_t i = length( *out_ss ); i < col * row; i++ )
+		{
+			s.getElement( &temp, i );
+			out_zo->si.addRow( &temp, 1 );
+		}
+		out_zo->fs = fs;	 // save sample frequency
+		out_zo->qq = qq;	 // save loval parameters
+		out_zo->qp = qp;	 // save estnoisem parameters
+		out_zo->ze = ze;	 // save state of noise estimation
+	}
 }
-
 
 Matrix rfft( Matrix x )
 {

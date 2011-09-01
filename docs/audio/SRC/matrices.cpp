@@ -2319,6 +2319,9 @@ Matrix sum( Matrix mat, double dim )
 		Matrix ret( dat, 1, row );
 		return ret;
 	}
+	/*Shouldn't reach here.*/
+	Matrix ret;
+	return ret;
 }
 
 /* Matlab: repmat(): square. */
