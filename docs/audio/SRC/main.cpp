@@ -412,7 +412,7 @@ void formatDistribute( char *filenames, char *formats )
     temp = strtok( filenames, "," );
 
     arginfo.ofilename.insert( pair<char *, int>( temp, DEFAULT_FORMAT ) );
-    while( temp = strtok( NULL, "," ) )
+    while( ( temp = strtok( NULL, "," ) ) )
     {
         arginfo.ofilename.insert( pair<char *, int>( temp, DEFAULT_FORMAT ) );
     }
@@ -432,7 +432,7 @@ void formatDistribute( char *filenames, char *formats )
     it->second = formatof( temp );
     it++;
 
-    while( temp = strtok( NULL, "," ) )
+    while( ( temp = strtok( NULL, "," ) ) )
     {
         it->second = formatof( temp );
         it++;

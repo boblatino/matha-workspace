@@ -196,11 +196,13 @@ void estnoisem( Matrix yf, estnoisem_out_stat *tz, estnoisem_alg_param *pp, Matr
 			Matrix yft = yf.getSubMatrix( 0, nr - 1, t, t ); // yf(t,:);		 // noise speech power spectrum
 								 // alpha_c-bar(t)  (9)
 			Matrix acb = power( power ( ( dotDivision( sum(p),sum(yft) ) - 1 ), 2) + 1, -1);
-								 // alpha_c(t)  (10)
+acb = real(acb);								 // alpha_c(t)  (10)
 			ac = max( acb, acmax ) * ( 1 - aca ) + ac * aca;
 								 // alpha_hat: smoothing factor per frequency (11)
-			Matrix ah = power( dotProduct( ac, power( dotDivision(p,sn2)-1,2 ) + 1 ), (-1) ) * amax;    // alpha_hat: smoothing factor per frequency (11)
+			Matrix ah = dotProduct( power(  power( dotDivision(p,sn2)-1,2 ) + 1 , (-1) ), ac ) * amax;    // alpha_hat: smoothing factor per frequency (11)
+			//Matrix ah = power( dotProduct( ac, power( dotDivision(p,sn2)-1,2 ) + 1 ), (-1) ) * amax;    // alpha_hat: smoothing factor per frequency (11)
 			//ah = power( amax * dotProduct( ac, 1 + power( ( dotDivision( p, sn2 ) - 1 ), 2 ), -1);
+ah = real(ah);
 			Matrix snr = sum(p) / sum(sn2);
 								 // lower limit for alpha_hat (12)
 			ah = max( min( mpower( snr, snrexp ), aminh ), ah );
@@ -209,12 +211,12 @@ void estnoisem( Matrix yf, estnoisem_out_stat *tz, estnoisem_alg_param *pp, Matr
 			p = dotProduct( ah, p ) + dotProduct( ah*(-1) + 1, yft );
 			Matrix b = min( power( ah, 2 ), bmax ); // smoothing constant for estimating periodogram variance (22 + 2 lines)
 								 // smoothed periodogram (20)
-			pb = power( b, pb ) + power( b * (-1) + 1, p );
+			pb = dotProduct( b, pb ) + dotProduct( b * (-1) + 1, p );
 								 // smoothed periodogram squared (21)
 			pb2 = dotProduct( b, pb2 ) + dotProduct( b * (-1) + 1, power( p, 2 ) );
 
 								 // Qeq inverse (23)
-			Matrix qeqi = max( min( dotDivision( pb2 - power( pb, 2), power( sn2, 2 ) * 2 ), qeqimax ) , qeqimin / ( t + nrcum ) );
+			Matrix qeqi = max( min( dotDivision( pb2 - power( pb, 2), power( sn2, 2 ) * 2 ), qeqimax ) , qeqimin / ( t + nrcum + 1 ) );
 			Matrix qiav = sum(qeqi)/nrf; // Average over all frequencies (23+12 lines) (ignore non-duplication of DC and nyquist terms)
 			Matrix bc = sqrt( qiav ) * av + 1; // bias correction factor (23+11 lines)
 								 // we use the simplified form (17) instead of (15)
@@ -222,7 +224,7 @@ void estnoisem( Matrix yf, estnoisem_out_stat *tz, estnoisem_alg_param *pp, Matr
 								 // same expression but for sub windows
 			Matrix bminv = dotDivision( 1 - mv, power( qeqi, -1 ) - mv * 2 ) * ( nv - 1 ) * 2 + 1;
 								 // Frequency mask for new minimum
-			Matrix kmod = bc * dotProduct( p, bmind < actmin );
+			Matrix kmod = ( bc * dotProduct( p, bmind) ) < actmin ;
 			if( any( kmod ) )
 			{
 				size_t co, ro;
@@ -292,9 +294,9 @@ void estnoisem( Matrix yf, estnoisem_out_stat *tz, estnoisem_alg_param *pp, Matr
 						}
 				}
 				lminflag.size( &col, &row );
-				lminflag = zeros( col, row );
+				lminflag = zeros( row, col );
 				actmin.size( &col, &row );
-				actmin = real( ones( col, row) * INFINITY );
+				actmin = real( ones( row, col) * INFINITY );
 				subwc = 0;
 			}
 			subwc = subwc+1;
@@ -491,14 +493,25 @@ void estnoisem( Matrix yf, double tz, estnoisem_alg_param *pp, Matrix *out_x, es
 			Matrix yft = yf.getSubMatrix( 0, nr - 1, t, t ); // yf(t,:);		 // noise speech power spectrum
 								 // alpha_c-bar(t)  (9)
 			Matrix acb = power( power ( ( dotDivision( sum(p),sum(yft) ) - 1 ), 2) + 1, -1);
-								 // alpha_c(t)  (10)
+acb = real(acb);								 // alpha_c(t)  (10)
 			ac = max( acb, acmax ) * ( 1 - aca ) + ac * aca;
 								 // alpha_hat: smoothing factor per frequency (11)
-			Matrix ah = power( dotProduct( ac, power( dotDivision(p,sn2)-1,2 ) + 1 ), (-1) ) * amax;    // alpha_hat: smoothing factor per frequency (11)
+p.printout();
+sn2.printout();
+cout << amax << endl;
+dotDivision(p,sn2).printout();
+power( dotDivision(p,sn2)-1,2).printout();
+power(power( dotDivision(p,sn2)-1,2) + 1,-1).printout();
+
+            //ah=amax*ac.*(1+(p./sn2-1).^2).^(-1)    % alpha_hat: smoothing factor per frequency (11)
+			Matrix ah = dotProduct( power(  power( dotDivision(p,sn2)-1,2 ) + 1 , (-1) ), ac ) * amax;    // alpha_hat: smoothing factor per frequency (11)
 			//ah = power( amax * dotProduct( ac, 1 + power( ( dotDivision( p, sn2 ) - 1 ), 2 ), -1);
+ah = real(ah);
 			Matrix snr = sum(p) / sum(sn2);
 								 // lower limit for alpha_hat (12)
 			ah = max( min( mpower( snr, snrexp ), aminh ), ah );
+snr.printout();
+cout << snrexp << endl;
 
 								 // smoothed noisy speech power (3)
 			p = dotProduct( ah, p ) + dotProduct( ah*(-1) + 1, yft );

@@ -38,6 +38,33 @@ typedef struct
 	estnoisem_alg_param qq;
 } estnoisem_out_stat;
 
+typedef struct
+{
+	double taca;
+	double tamax;
+	double taminh;
+	double tpfall;
+	double tbmax;
+	double qeqmin;
+	double qeqmax;
+	double av;
+	double td;
+	double nu;
+	Matrix qith;
+	Matrix nsmdb;
+	double of;
+	double ti;
+	double ri;
+	double g;
+	double e;
+	double am;
+	double b;
+	double al;
+	double ah;
+	double bt;
+	double mx;
+	double gh;
+} specsub_alg_param;
 
 /* estnoisem(). */
 void estnoisem( Matrix yf, double tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs );
