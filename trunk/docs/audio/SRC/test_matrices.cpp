@@ -229,5 +229,13 @@ int main()
 
 	cout << "power( seq(1,4), seq(1,4) ).printout();" << endl;
 	power( seq(1,4), seq(1,4) ).printout();
+
+	cout << "sum( reshape( 0:24, 5, 5 ), 1 )" << endl;
+	sum( reshape( seq(0,24), 5, 5 ), 1 ).printout();
+
+	cout << "sum( reshape( 0:24, 5, 5 ), 2 )" << endl;
+	sum( reshape( seq(0,24), 5, 5 ), 2 ).printout();
+
+
 	return 0;
 }

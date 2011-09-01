@@ -152,6 +152,7 @@ size_t length( Matrix );
 
 /* Matlab: sum(). */
 Matrix sum( Matrix );
+Matrix sum( Matrix, double );
 
 /* Matlab: sqrt(). */
 Matrix sqrt( Matrix );

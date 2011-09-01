@@ -590,6 +590,55 @@ Matrix dotProduct( double val, Matrix mat )
 	return ret;
 }
 
+/* Operator /: Scalar division (double). */
+Matrix operator/ ( double factor, Matrix mat )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error dividing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	size_t col, row;
+	mat.size( &col, &row );
+	complex <double> complex_data[ row * col ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			complex_data[ i * row + j] = factor / temp;
+		}
+
+	Matrix ret( complex_data, col, row );
+	return ret;
+}
+
+/* Operator /: Scalar division (complex). */
+Matrix operator/ ( complex<double> factor, Matrix mat )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error dividing an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	
+	size_t col, row;
+	mat.size( &col, &row );
+	complex <double> complex_data[ row * col ], temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			complex_data[ i * row + j] = factor / temp;
+		}
+
+	Matrix ret( complex_data, col, row );
+	return ret;
+}
+
+
 /* ./ */
 Matrix dotDivision( Matrix MATa, Matrix MATb )
 {
@@ -607,7 +656,7 @@ Matrix dotDivision( Matrix MATa, Matrix MATb )
 	{
 		complex<double> temp;
 		MATa.getElement( &temp, 0, 0 );
-		return MATb / temp;
+		return temp / MATb;
 	}
 	if( Ncolumnsb == 1 && Nrowsb == 1 )
 	{
@@ -2213,25 +2262,36 @@ double min( double val1, double val2 )
 	return val1 < val2? val1 : val2;
 }
 
-/* Matlab: sum(): One matrix. */
+/* Matlab: sum(): with dimension. */
 Matrix sum( Matrix mat )
 {
 	size_t col, row;
 	mat.size( &col, &row );
-	complex<double> dat[ col ], temp;
 	if( row == 1 )
+		return sum( mat, 2 );
+	return sum( mat, 1 );
+}
+
+/* Matlab: sum(): One matrix. */
+Matrix sum( Matrix mat, double dim )
+{
+	if( mat.isempty() )
 	{
-		dat[ 0 ] = complex<double>(0,0);
-		for( size_t i = 0; i < col; i++ )
-		{
-			mat.getElement( &temp, i, 0 );
-			dat[ 0 ] += temp;
-		}
-		Matrix ret( dat, 1, 1 );
+		cerr << "Error: Summing an empty matrix." << endl;
+		Matrix ret;
 		return ret;
 	}
-	else
+	if( dim > 2 || dim < 1 )
 	{
+		cerr << "Error: sum: Dimension not supported." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	if( dim == 1 )
+	{
+		complex<double> dat[ row ], temp;
 		for( size_t i = 0; i < col; i++ )
 		{
 			dat[ i ] = complex<double>( 0, 0 );
@@ -2242,6 +2302,21 @@ Matrix sum( Matrix mat )
 			}
 		}
 		Matrix ret( dat, col, 1 );
+		return ret;
+	}
+	else if( dim == 2 )
+	{
+		complex<double> dat[ col ], temp;
+		for( size_t i = 0; i < row; i++ )
+		{
+			dat[ i ] = complex<double>( 0, 0 );
+			for( size_t j = 0; j < col; j++ )
+			{
+				mat.getElement( &temp, j, i );
+				dat[ i ] += temp;
+			}
+		}
+		Matrix ret( dat, 1, row );
 		return ret;
 	}
 }
