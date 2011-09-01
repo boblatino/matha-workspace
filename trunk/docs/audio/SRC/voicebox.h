@@ -3,7 +3,7 @@
 
 #include "matrices.h"
 
-typedef struct
+/*typedef struct
 {
 	double taca;
 	double tamax;
@@ -17,27 +17,8 @@ typedef struct
 	double nu;
 	Matrix qith;
 	Matrix nsmdb;
-} estnoisem_alg_param;
-
-typedef struct
-{
-	double nrcum;
-	Matrix p;
-	Matrix ac;
-	Matrix sn2;
-	Matrix pb;
-	Matrix pb2;
-	Matrix pminu;
-	Matrix actmin;
-	Matrix actminsub;
-	double subwc;
-	Matrix actbuf;
-	double ibuf;
-	Matrix lminflag;
-	double tinc;
-	estnoisem_alg_param qq;
-} estnoisem_out_stat;
-
+} alg_param;
+*/
 typedef struct
 {
 	double taca;
@@ -64,14 +45,59 @@ typedef struct
 	double bt;
 	double mx;
 	double gh;
-} specsub_alg_param;
+} alg_param;
+
+typedef struct
+{
+	double nrcum;
+	Matrix p;
+	Matrix ac;
+	Matrix sn2;
+	Matrix pb;
+	Matrix pb2;
+	Matrix pminu;
+	Matrix actmin;
+	Matrix actminsub;
+	double subwc;
+	Matrix actbuf;
+	double ibuf;
+	Matrix lminflag;
+	double tinc;
+	alg_param qq;
+} estnoisem_out_stat;
+
+typedef struct
+{
+	double nrcum;
+	Matrix p;
+	Matrix ac;
+	Matrix sn2;
+	Matrix pb;
+	Matrix pb2;
+	Matrix pminu;
+	Matrix actmin;
+	Matrix actminsub;
+	double subwc;
+	Matrix actbuf;
+	double ibuf;
+	Matrix lminflag;
+	double tinc;
+	alg_param qq;
+	double fs;
+	Matrix si;
+	Matrix ssv;
+	alg_param qp;
+	estnoisem_out_stat ze;
+}specsub_out_stat;
+
 
 /* estnoisem(). */
-void estnoisem( Matrix yf, double tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs );
-void estnoisem( Matrix yf, estnoisem_out_stat *tz, estnoisem_alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs );
+void estnoisem( Matrix yf, double tz, alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs );
+void estnoisem( Matrix yf, estnoisem_out_stat *tz, alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs );
 
 /* specsub(). */
-void specsub();
+void specsub( Matrix si, /*struct*/ double fsz, alg_param *pp, Matrix *out_ss, specsub_out_stat *out_zo );
+void specsub( Matrix si, specsub_out_stat *fsz, alg_param *pp, Matrix *out_ss, specsub_out_stat *out_zo );
 
 /* rfft(). */
 Matrix rfft( Matrix x );
