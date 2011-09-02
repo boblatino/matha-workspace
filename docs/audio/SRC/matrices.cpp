@@ -198,8 +198,18 @@ void Matrix::printout()
 /* getElement(). */
 int Matrix::getElement( complex <double> *dat, size_t index )
 {
-	if( Ncolumns * Nrows - 1 < index )
+	if( !initialized )
+	{
+		cerr << "Error getting element from a not initialized matrix." << endl;
+		*dat = complex<double>( NAN, NAN );
 		return -1;
+	}
+	if( Ncolumns * Nrows - 1 < index )
+	{
+		cerr << "Error getting an out of boundary element." << endl;
+		*dat = complex<double>( NAN, NAN );
+		return -1;
+	}
 	*dat = data[ index / Nrows ][ index % Nrows ];
 	return 0;
 }
@@ -207,8 +217,18 @@ int Matrix::getElement( complex <double> *dat, size_t index )
 /* getElement(). */
 int Matrix::getElement( complex <double> *dat, size_t col, size_t row )
 {
-	if( col >= Ncolumns || row >= Nrows )
+	if( !initialized )
+	{
+		cerr << "Error getting element from a not initialized matrix." << endl;
+		*dat = complex<double>( NAN, NAN );
 		return -1;
+	}
+	if( col >= Ncolumns || row >= Nrows )
+	{
+		cerr << "Error getting an out of boundary element." << endl;
+		*dat = complex<double>( NAN, NAN );
+		return -1;
+	}
 	*dat = data[col][row];
 	return 0;
 }
@@ -216,8 +236,18 @@ int Matrix::getElement( complex <double> *dat, size_t col, size_t row )
 /* setElement(). */
 int Matrix::setElement( complex <double> dat, size_t index )
 {
-	if( Ncolumns * Nrows - 1 < index )
+	if( !initialized )
+	{
+		cerr << "Error setting element from a not initialized matrix." << endl;
+		dat = complex<double>( NAN, NAN );
 		return -1;
+	}
+	if( Ncolumns * Nrows - 1 < index )
+	{
+		cerr << "Error setting an out of boundary element." << endl;
+		dat = complex<double>( NAN, NAN );
+		return -1;
+	}
 	data[ index / Nrows ][ index % Nrows ] = dat;
 	return 0;
 }
@@ -225,8 +255,18 @@ int Matrix::setElement( complex <double> dat, size_t index )
 /* setElement(): complex value. */
 int Matrix::setElement( complex <double> dat, size_t col, size_t row)
 {
-	if( col >= Ncolumns || row >= Nrows )
+	if( !initialized )
+	{
+		cerr << "Error setting element from a not initialized matrix." << endl;
+		dat = complex<double>( NAN, NAN );
 		return -1;
+	}
+	if( col >= Ncolumns || row >= Nrows )
+	{
+		cerr << "Error setting an out of boundary element." << endl;
+		dat = complex<double>( NAN, NAN );
+		return -1;
+	}
 	data[col][row] = dat;
 	return 0;
 }
@@ -240,6 +280,18 @@ int Matrix::setElement( double dat, size_t col, size_t row)
 /* getSubMatrix() */
 Matrix Matrix::getSubMatrix( size_t sCol, size_t eCol, size_t sRow, size_t eRow )
 {
+	if( !initialized )
+	{
+		cerr << "Error getting subMatrix from a not initialized matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( eCol >= Ncolumns || sCol >= Ncolumns || eRow >= Nrows || sRow >= Nrows )
+	{
+		cerr << "Error getting an out of boundary subMatrix." << endl;
+		Matrix ret;
+		return ret;
+	}
 	complex<double> dat[ ( eCol - sCol + 1 ) * ( eRow - sRow + 1 ) /*+ 1*/];
 	for( size_t i = sCol; i <= eCol; i++ )
 		for( size_t j = sRow; j <= eRow; j++ )
@@ -2306,7 +2358,7 @@ Matrix sum( Matrix mat, double dim )
 	}
 	else if( dim == 2 )
 	{
-		complex<double> dat[ col ], temp;
+		complex<double> dat[ row ], temp;
 		for( size_t i = 0; i < row; i++ )
 		{
 			dat[ i ] = complex<double>( 0, 0 );
