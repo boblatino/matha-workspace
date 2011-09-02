@@ -6,6 +6,80 @@
 
 using namespace std;
 
+void init_alg_param( alg_param x )
+{
+	Matrix empty;
+	x.taca = NAN;
+	x.tamax = NAN;
+	x.taminh = NAN;
+	x.tpfall = NAN;
+	x.tbmax = NAN;
+	x.qeqmin = NAN;
+	x.qeqmax = NAN;
+	x.av = NAN;
+	x.td = NAN;
+	x.nu = NAN;
+	x.qith = empty;
+	x.nsmdb = empty;
+	x.of = NAN;
+	x.ti = NAN;
+	x.ri = NAN;
+	x.g = NAN;
+	x.e = NAN;
+	x.am = NAN;
+	x.b = NAN;
+	x.al = NAN;
+	x.ah = NAN;
+	x.bt = NAN;
+	x.mx = NAN;
+	x.gh = NAN;
+}
+
+void init_estnoisem_out_stat( estnoisem_out_stat x )
+{
+	Matrix empty;
+	x.nrcum = NAN;
+	x.p = empty;
+	x.ac = empty;
+	x.sn2 = empty;
+	x.pb = empty;
+	x.pb2 = empty;
+	x.pminu = empty;
+	x.actmin = empty;
+	x.actminsub = empty;
+	x.subwc = NAN;
+	x.actbuf = empty;
+	x.ibuf = NAN;
+	x.lminflag = empty;
+	x.tinc = NAN;
+	init_alg_param( x.qq );
+}
+
+void init_specsub_out_stat( specsub_out_stat x )
+{
+	Matrix empty;
+	x.nrcum = NAN;
+	x.p = empty;
+	x.ac = empty;
+	x.sn2 = empty;
+	x.pb = empty;
+	x.pb2 = empty;
+	x.pminu = empty;
+	x.actmin = empty;
+	x.actminsub = empty;
+	x.subwc = NAN;
+	x.actbuf = empty;
+	x.ibuf = NAN;
+	x.lminflag = empty;
+	x.tinc = NAN;
+	init_alg_param( x.qq );
+	x.fs = NAN;
+	x.si = empty;
+	x.ssv = empty;
+	init_alg_param( x.qp );
+	init_estnoisem_out_stat( x.ze );
+}
+
 void mhvals( double d, double *out_m, double *out_h  )
 {
 	static double dmh_d[][ 18 ] =
@@ -79,6 +153,7 @@ void estnoisem( Matrix yf, estnoisem_out_stat *tz, alg_param *pp, Matrix *out_x,
 {
 	size_t nr, nrf;
 	alg_param qq;
+	init_alg_param( qq );
 	double nrcum, subwc, ibuf, tinc;
 	Matrix actmin, actminsub, actbuf, lminflag, sn2, p, pb, pb2, pminu, ac;
 	double taca, tamax, taminh, tpfall, tbmax, qeqmin, qeqmax, av, td, nu;
@@ -172,7 +247,7 @@ void estnoisem( Matrix yf, estnoisem_out_stat *tz, alg_param *pp, Matrix *out_x,
 	{
 		if( !nrcum )			 // initialize values for first frame
 		{
-			p = yf.getSubMatrix( 0, nr - 1, 0, 0 ); // yf(1,:);		 // smoothed power spectrum
+			p = yf.getSubMatrix( 0, nrf - 1, 0, 0 ); // yf(1,:);		 // smoothed power spectrum
 			ac = 1;				 // correction factor (9)
 			sn2 = p;			 // estimated noise power
 			pb = p;				 // smoothed noisy speech power (20)
@@ -193,7 +268,7 @@ void estnoisem( Matrix yf, estnoisem_out_stat *tz, alg_param *pp, Matrix *out_x,
 
 		for( size_t t = 0; t < nr; t++ )			 // we use t instead of lambda in the paper
 		{
-			Matrix yft = yf.getSubMatrix( 0, nr - 1, t, t ); // yf(t,:);		 // noise speech power spectrum
+			Matrix yft = yf.getSubMatrix( 0, nrf - 1, t, t ); // yf(t,:);		 // noise speech power spectrum
 								 // alpha_c-bar(t)  (9)
 			Matrix acb = power( power ( ( dotDivision( sum(p),sum(yft) ) - 1 ), 2) + 1, -1);
 acb = real(acb);								 // alpha_c(t)  (10)
@@ -262,8 +337,8 @@ ah = real(ah);
 				complex<double> temp;
 				for( size_t i = 0; i < col ; i++ )
 				{
-					actmin.getElement( &temp, i, ibuf );
-					actbuf.setElement( temp, i, ibuf );
+					actmin.getElement( &temp, i, ibuf - 1);
+					actbuf.setElement( temp, i, ibuf - 1);
 				}
 				//actbuf(ibuf,:) = actmin;
 
@@ -326,6 +401,7 @@ ah = real(ah);
 	}
 	if( out_zo != NULL )				 // we need to store the state for next time
 	{
+		init_estnoisem_out_stat( *out_zo );
 		out_zo->nrcum = nrcum+nr;	 // number of frames so far
 		out_zo->p = p;				 // smoothed power spectrum
 		out_zo->ac = ac;				 // correction factor (9)
@@ -349,6 +425,7 @@ void estnoisem( Matrix yf, double tz, alg_param *pp, Matrix *out_x, estnoisem_ou
 {
 	size_t nr, nrf;
 	alg_param qq;
+	init_alg_param( qq );
 	double nrcum, subwc, ibuf, tinc;
 	Matrix actmin, actminsub, actbuf, lminflag, sn2, p, pb, pb2, pminu, ac;
 	double taca, tamax, taminh, tpfall, tbmax, qeqmin, qeqmax, av, td, nu;
@@ -469,7 +546,7 @@ void estnoisem( Matrix yf, double tz, alg_param *pp, Matrix *out_x, estnoisem_ou
 	{
 		if( !nrcum )			 // initialize values for first frame
 		{
-			p = yf.getSubMatrix( 0, nr - 1, 0, 0 ); // yf(1,:);		 // smoothed power spectrum
+			p = yf.getSubMatrix( 0, nrf - 1, 0, 0 ); // yf(1,:);		 // smoothed power spectrum
 			ac = 1;				 // correction factor (9)
 			sn2 = p;			 // estimated noise power
 			pb = p;				 // smoothed noisy speech power (20)
@@ -490,7 +567,7 @@ void estnoisem( Matrix yf, double tz, alg_param *pp, Matrix *out_x, estnoisem_ou
 
 		for( size_t t = 0; t < nr; t++ )			 // we use t instead of lambda in the paper
 		{
-			Matrix yft = yf.getSubMatrix( 0, nr - 1, t, t ); // yf(t,:);		 // noise speech power spectrum
+			Matrix yft = yf.getSubMatrix( 0, nrf - 1, t, t ); // yf(t,:);		 // noise speech power spectrum
 								 // alpha_c-bar(t)  (9)
 			Matrix acb = power( power ( ( dotDivision( sum(p),sum(yft) ) - 1 ), 2) + 1, -1);
 acb = real(acb);								 // alpha_c(t)  (10)
@@ -624,6 +701,7 @@ ah = real(ah);
 	}
 	if( out_zo != NULL )				 // we need to store the state for next time
 	{
+		init_estnoisem_out_stat( *out_zo );
 		out_zo->nrcum = nrcum+nr;	 // number of frames so far
 		out_zo->p = p;				 // smoothed power spectrum
 		out_zo->ac = ac;				 // correction factor (9)
@@ -647,15 +725,16 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 	double fs, ni;
 	size_t col, row;
 	Matrix ypf, mzf, af, dpf, v, bf;
-	alg_param qq;
-	alg_param qp;
+	alg_param qq, *qp = pp;
+	init_alg_param( qq );
+	//init_alg_param( qp );
 	complex<double> temp, temp2;
 
 // fsz struct
 /*
 	fs = fsz.fs;
 	qq = fsz.qq;
-	qp = fsz.qp;
+	qp = *fsz.qp;
 	ze = fsz.ze;
 							 // allocate space for speech
 	si.size( &col, &row );
@@ -694,7 +773,6 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 	qq.gh=1;				 // maximum gain
 	if( pp != NULL )
 	{
-		qp = *pp;				 // save for estnoisem call
 		if( !isnan( pp->taca ) )
 			qq.taca = pp->taca;
 		if( !isnan( pp->tamax ) )
@@ -745,7 +823,7 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 						 // normalize to give overall gain of 1
 	//w=w/sqrt(sum(w( 1:ni:nf ).^2));
 	temp = complex<double>( 0, 0 );
-	for( size_t i = 0; i < nf; i++ )
+	for( size_t i = 0; i < nf; i += ni )
 	{
 		w.getElement( &temp, i );
 		temp2 += pow( temp, 2 );
@@ -769,7 +847,8 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 //fsz double						 // estimate the noise using minimum statistics
 	Matrix dp;
 	estnoisem_out_stat ze;
-	estnoisem( yp, tinc, &qp, &dp, &ze, NULL );
+	init_estnoisem_out_stat( ze );
+	estnoisem( yp, tinc, qp, &dp, &ze, NULL );
 						 // dummy saved overlap
 	Matrix ssv=zeros(ni*(no-1),1);
 //end of double
@@ -925,18 +1004,18 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 		for( size_t i = 0; i < no; i++ )
 		{
 						 // number of samples in this set
-			double nm = nf * ( 1 + floor( ( nr - (i+1) ) / no ) );
+			double nm = nf * ( 1 + floor( ( (double)nr - (i+1) ) / no ) );
 			//ss( 1+(i-1)*ni : nm+(i-1)*ni , i ) = reshape( se( i : no : nr , : )', nm, 1 )
 			Matrix tempmat;
 			se.size( &col, &row );
-			for( size_t j = i; i < nr; i += no )
-				for( size_t k = 0; k < row; k++ )
+			for( size_t k = 0; k < col; k++ )
+				for( size_t j = i; j < nr; j += no )
 				{
-					se.getElement( &temp, j, k );
+					se.getElement( &temp, k, j );
 					tempmat.addRow( &temp, 1 );
 				}
 			size_t k = 0;
-			for( size_t j = ( i - 1 ) * ni; j < nm + ( i - 1 ) * ni; i++ )
+			for( size_t j = i * ni; j < nm + i * ni; j++ )
 			{
 				se.getElement( &temp, k++ );
 				out_ss->setElement( temp, i, j );
@@ -946,6 +1025,7 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 	}
 	if( out_zo != NULL )
 	{
+		init_specsub_out_stat( *out_zo );
 		if( nr )
 		{
 						 // save the output tail for next time
@@ -977,7 +1057,7 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 		}
 		out_zo->fs = fs;	 // save sample frequency
 		out_zo->qq = qq;	 // save loval parameters
-		out_zo->qp = qp;	 // save estnoisem parameters
+		out_zo->qp = *qp;	 // save estnoisem parameters
 		out_zo->ze = ze;	 // save state of noise estimation
 	}
 }
@@ -1315,7 +1395,8 @@ Matrix enframe( Matrix x, Matrix win, size_t inc )
 	}
 
 	if( nwin > 1 )
-		f = dotProduct( f, repmat( reshape( win, len, 1 ), nf, 1 ) );
+		f = dotProduct( f, repmat( reshape( win, 1, len ), nf, 1 ) );
+		//f = dotProduct( f, repmat( reshape( win, len, 1 ), nf, 1 ) );
 
 	return f;
 }
@@ -1352,7 +1433,8 @@ Matrix enframe( Matrix x, Matrix win )
 	}
 
 	if( nwin > 1 )
-		f = dotProduct( f, repmat( reshape( win, len, 1 ), nf, 1 ) );
+		f = dotProduct( f, repmat( reshape( win, 1, len ), nf, 1 ) );
+		//f = dotProduct( f, repmat( reshape( win, len, 1 ), nf, 1 ) );
 
 	return f;
 }

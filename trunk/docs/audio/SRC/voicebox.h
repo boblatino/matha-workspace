@@ -90,6 +90,9 @@ typedef struct
 	estnoisem_out_stat ze;
 }specsub_out_stat;
 
+void init_specsub_out_stat( specsub_out_stat x );
+void init_estnoisem_out_stat( estnoisem_out_stat x );
+void init_alg_param( alg_param x );
 
 /* estnoisem(). */
 void estnoisem( Matrix yf, double tz, alg_param *pp, Matrix *out_x, estnoisem_out_stat *out_zo, Matrix *out_xs );

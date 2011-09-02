@@ -50,6 +50,7 @@ int main()
 
 	Matrix xo, xs;
 	estnoisem_out_stat zo;
+	init_estnoisem_out_stat( zo );
 	cout << "estnoisem( m1, 3, NULL, &xo, &zo, &xs );" << endl;
 	estnoisem( m1, 3, NULL, &xo, &zo, &xs );
 	xo.printout();
@@ -125,7 +126,13 @@ int main()
 	cout << zo.tinc;
 	cout << endl <<	"estnoisem_alg_param qq;";
 //	estnoisem_alg_param qq;
+	cout << endl;
 
+	specsub_out_stat z;
+	init_specsub_out_stat( z );
+	cout << "specsub( m1, 100, NULL, &xo, &z )" << endl;
+	specsub( m1, 100, NULL, &xo, &z );
+	xo.printout();
 
 	return 0;
 }
