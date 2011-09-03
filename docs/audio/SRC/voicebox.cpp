@@ -337,8 +337,8 @@ ah = real(ah);
 				complex<double> temp;
 				for( size_t i = 0; i < col ; i++ )
 				{
-					actmin.getElement( &temp, i, ibuf - 1);
-					actbuf.setElement( temp, i, ibuf - 1);
+					actmin.getElement( &temp, i, 0 );
+					actbuf.setElement( temp, i, ibuf - 1 );
 				}
 				//actbuf(ibuf,:) = actmin;
 
@@ -637,7 +637,7 @@ ah = real(ah);
 				complex<double> temp;
 				for( size_t i = 0; i < col ; i++ )
 				{
-					actmin.getElement( &temp, i, ibuf - 1 );
+					actmin.getElement( &temp, i, 0 );
 					actbuf.setElement( temp, i, ibuf - 1 );
 				}
 				//actbuf(ibuf,:) = actmin;
@@ -866,7 +866,8 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 			ypf=sum(yp,2);
 			dpf=sum(dp,2);
 			mzf=( dpf==0 );	 // zero noise frames = very high SNR
-			af = ( min( max( log10( dotDivision( ypf,dpf+mzf) ) * 10, qq.al ), qq.ah ) - qq.ah )/( qq.al - qq.ah ) * (qq.am-1) + 1;
+
+			af = ( ( min( max( log10( dotDivision( ypf,dpf+mzf) ) * 10, qq.al ), qq.ah ) - qq.ah ) * (qq.am-1) )/( qq.al - qq.ah ) + 1;
 			//af( mzf ) = 1;	 // fix the zero noise frames
 			af.size( &col, &row );
 			for( size_t i = 0; i < row; i++ )
@@ -1008,8 +1009,8 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 			//ss( 1+(i-1)*ni : nm+(i-1)*ni , i ) = reshape( se( i : no : nr , : )', nm, 1 )
 			Matrix tempmat;
 			se.size( &col, &row );
-			for( size_t k = 0; k < col; k++ )
-				for( size_t j = i; j < nr; j += no )
+			for( size_t j = i; j < nr; j += no )
+				for( size_t k = 0; k < col; k++ )
 				{
 					se.getElement( &temp, k, j );
 					tempmat.addRow( &temp, 1 );
@@ -1017,7 +1018,7 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 			size_t k = 0;
 			for( size_t j = i * ni; j < nm + i * ni; j++ )
 			{
-				se.getElement( &temp, k++ );
+				tempmat.getElement( &temp, k++ );
 				out_ss->setElement( temp, i, j );
 			}
 		}
@@ -1057,7 +1058,8 @@ void specsub( Matrix si, /* specsub_out_stat * */ double fsz, alg_param *pp, Mat
 		}
 		out_zo->fs = fs;	 // save sample frequency
 		out_zo->qq = qq;	 // save loval parameters
-		out_zo->qp = *qp;	 // save estnoisem parameters
+		if( qp != NULL )
+			out_zo->qp = *qp;	 // save estnoisem parameters
 		out_zo->ze = ze;	 // save state of noise estimation
 	}
 }

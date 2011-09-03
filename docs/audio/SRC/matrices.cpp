@@ -2225,7 +2225,7 @@ Matrix max( Matrix mat1, Matrix mat2 )
 		{
 			mat1.getElement( &temp1, i, j );
 			mat2.getElement( &temp2, i, j );
-			dat[ i ] = temp1.real() > temp2.real() ? temp1 : temp2;
+			dat[ i * row1 + j ] = temp1.real() > temp2.real() ? temp1 : temp2;
 		}
 
 	Matrix ret( dat, col1, row1 );
@@ -2247,7 +2247,7 @@ Matrix max( Matrix mat1, double val )
 		for( size_t j = 0; j < row1; j++ )
 		{
 			mat1.getElement( &temp1, i, j );
-			dat[ i ] = temp1.real() > val ? temp1 : val;
+			dat[ i * row1 + j ] = temp1.real() > val ? temp1 : val;
 		}
 
 	Matrix ret( dat, col1, row1 );
@@ -2279,7 +2279,7 @@ Matrix min( Matrix mat1, Matrix mat2 )
 		{
 			mat1.getElement( &temp1, i, j );
 			mat2.getElement( &temp2, i, j );
-			dat[ i ] = temp1.real() < temp2.real() ? temp1 : temp2;
+			dat[ i * row1 + j ] = temp1.real() < temp2.real() ? temp1 : temp2;
 		}
 
 	Matrix ret( dat, col1, row1 );
@@ -2302,7 +2302,7 @@ Matrix min( Matrix mat1, double val )
 		for( size_t j = 0; j < row1; j++ )
 		{
 			mat1.getElement( &temp1, i, j );
-			dat[ i ] = temp1.real() < val ? temp1 : val;
+			dat[ i * row1 + j ] = temp1.real() < val ? temp1 : val;
 		}
 
 	Matrix ret( dat, col1, row1 );
