@@ -99,6 +99,7 @@ class Matrix
 		/* Miscellaneous. */
 		void size( size_t *, size_t* );
 		bool isempty();
+		bool isvector();
 		void printout();
 		void clear();
 		Matrix reshape( size_t, size_t );
@@ -227,6 +228,9 @@ Matrix fft( Matrix, size_t, size_t );
 Matrix ifft( Matrix );
 Matrix ifft( Matrix, size_t );
 Matrix ifft( Matrix, size_t, size_t );
+
+/* matlab:conv() */
+Matrix conv( Matrix, Matrix );
 
 /* replacing matlab's (start:end). */
 Matrix seq( double start, double end );
