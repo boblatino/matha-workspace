@@ -157,6 +157,14 @@ void Matrix::size( size_t *cols, size_t *rows )
 	return;
 }
 
+/* isvector(). */
+bool Matrix::isvector()
+{
+	if( Ncolumns == 1 || Nrows == 1 )
+		return true;
+	return false;
+}
+
 /* isempty(). */
 bool Matrix::isempty()
 {
@@ -2545,16 +2553,22 @@ Matrix fft( Matrix mat, size_t n )
 	if( col == 1 )
 	{
 		complex<double> dat[ n ], *fft;
-		for( size_t i = 0; i < n; i++ )
+		for( size_t i = 0; i < ( row < n ? row : n ); i++ )
 			mat.getElement( dat + i, 0, i );
+		if( n > row )
+			for( size_t i = row; i < n; i++ )
+				dat[ i ] = complex<double>( 0, 0 );
 		fft = __fft( dat, n );
 		ret.addColumn( fft, n );
 	}
 	else if( row == 1 )
 	{
 		complex<double> dat[ n ], *fft;
-		for( size_t i = 0; i < n; i++ )
+		for( size_t i = 0; i < ( col < n ? col : n ); i++ )
 			mat.getElement( dat + i, i, 0 );
+		if( n > col )
+			for( size_t i = col; i < n; i++ )
+				dat[ i ] = complex<double>( 0, 0 );
 		fft = __fft( dat, n );
 		ret.addRow( fft, n );
 	}
@@ -2563,8 +2577,11 @@ Matrix fft( Matrix mat, size_t n )
 		complex<double> dat[ n ], *temp;
 		for( size_t i = 0; i < col; i++ )
 		{
-			for( size_t j = 0; j < n; j++ )
+			for( size_t j = 0; j < ( row < n ? row : n ); j++ )
 				mat.getElement( dat + j, i, j );
+			if( n > row )
+				for( size_t j = row; j < n; j++ )
+					dat[ j ] = complex<double>( 0, 0 );
 			temp = __fft( dat, n );
 			ret.addColumn( temp, n );
 		}
@@ -2691,9 +2708,15 @@ Matrix seq( double start, double end )
 /* replacing matlab's (start:step:end). */
 Matrix seq( double start, double step, double end )
 {
+	if( step == 0 )
+	{
+		cerr << "Error creating a squence with 0 step." << endl;
+		Matrix ret;
+		return ret;
+	}
 	complex<double> dat[ (long long) ceil( ( end - start + 1 ) / step ) ];
 	size_t col = 0;
-	for( double i = start; i <= end; i += step )
+	for( double i = start; ( step > 0 && i <= end ) || ( step < 0 && i >= end ); i += step )
 	{
 		dat[ col++ ] = complex<double>( i, 0 );
 	}
@@ -2774,5 +2797,30 @@ bool any( Matrix mat )
 double rem( double val1, double val2 )
 {
 	return ( ( val1 / val2 ) - fix( val1 / val2 ) ) * val2 ;
+}
+
+/* matlab:conv() */
+Matrix conv( Matrix mata, Matrix matb )
+{
+	if( mata.isempty() || matb.isempty() )
+	{
+		cerr << "Error convolving an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( !mata.isvector() || !matb.isvector() )
+	{
+		cerr << "Error convolving non-vector." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t cola, colb, rowa, rowb;
+	mata.size( &cola, &rowa );
+	matb.size( &colb, &rowb );
+	if( !( cola == rowa ) && ( ( cola == 1 && colb != 1 ) || ( rowa == 1 && rowb != 1 ) ) )
+		matb = matb.transpose();
+	size_t n = length( mata ) + length( matb ) - 1;
+	return ifft( dotProduct( fft( mata, n ), fft( matb, n ) ) );
+
 }
 

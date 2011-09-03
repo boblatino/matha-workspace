@@ -236,6 +236,14 @@ int main()
 	cout << "sum( reshape( 0:24, 5, 5 ), 2 )" << endl;
 	sum( reshape( seq(0,24), 5, 5 ), 2 ).printout();
 
+	cout << "conv( seq( 0, 9 ), seq( 5, -1, 0 ) ).printout();" << endl;
+	conv( seq( 0, 9 ), seq( 5, -1, 0 ) ).printout();
+
+	cout << "conv( seq( 0, 9 ), seq( 5, -1, 0 ).transpose() ).printout();" << endl;
+	conv( seq( 0, 9 ), seq( 5, -1, 0 ).transpose() ).printout();
+
+	cout << "conv( seq( 0, 9 ).transpose(), seq( 5, -1, 0 ) ).printout();" << endl;
+	conv( seq( 0, 9 ).transpose(), seq( 5, -1, 0 ) ).printout();
 
 	return 0;
 }
