@@ -19,9 +19,12 @@ enum
 class sndconv
 {
 	public :
-		sndconv(char* filepath,size_t buffersize);
-		char* popstream();
-		void pushstream( char *, size_t );
+		sndconv( size_t buffersize);
+		int readmp3( char* mp3file );
+		int readwav( char* wavfile );
+		int readogg( char* oggfile );
+		void* popstream();
+		void pushstream( void *, size_t );
 		void makemp3(char* outfile,int qualityint);
 		void makewav(char* outfile);
 		void makeogg(char* outfile);
@@ -30,6 +33,7 @@ class sndconv
 	private:
 		char* filename;
 		mpg123_handle *mh;
+		SNDFILE* sf_file;
 		lame_t lame;
 		sndfls sndflst;
 		mp3hand sndmp3flst;
@@ -42,5 +46,6 @@ class sndconv
 		long rate;
 		int read;
 		int write;
+		int type;
 };
 #endif							 // SNDCONV_H

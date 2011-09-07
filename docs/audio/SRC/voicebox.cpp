@@ -1383,7 +1383,7 @@ Matrix enframe( Matrix x, Matrix win, size_t inc )
 	else
 		len = nwin;
 
-	size_t nf = fix((nx-len+inc)/inc);
+	size_t nf = fix(((float)nx-len+inc)/inc);
 	complex<double> dat[ len ];
 	Matrix f;
 	x = x.reshape( col * row, 1 );
@@ -1421,7 +1421,7 @@ Matrix enframe( Matrix x, Matrix win )
 		len = nwin;
 
 	size_t inc = len;
-	size_t nf = fix((nx-len+inc)/inc);
+	size_t nf = fix(((float)nx-len+inc)/inc);
 	complex<double> dat[ len ];
 	Matrix f;
 	x = x.reshape( col * row, 1 );

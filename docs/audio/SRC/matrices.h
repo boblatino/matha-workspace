@@ -91,9 +91,12 @@ class Matrix
 		/* Element manipulation. */
 		int getElement( std::complex <double> *, size_t col, size_t row);
 		int getElement( std::complex <double> *, size_t );
+		int getElement( double *, size_t col, size_t row);
+		int getElement( double *, size_t );
 		int setElement( std::complex <double>, size_t col, size_t row);
 		int setElement( double, size_t col, size_t row);
 		int setElement( std::complex <double>, size_t );
+		int setElement( double, size_t );
 		Matrix getSubMatrix( size_t start_col, size_t end_col, size_t start_row, size_t end_row );
 
 		/* Miscellaneous. */
@@ -151,6 +154,10 @@ Matrix repmat( Matrix, size_t y, size_t x );
 /* Matlab: length(). */
 size_t length( Matrix );
 
+/* Matlab: size(). */
+Matrix size( Matrix );
+size_t size( Matrix, size_t dim );
+
 /* Matlab: sum(). */
 Matrix sum( Matrix );
 Matrix sum( Matrix, double );
@@ -185,6 +192,15 @@ Matrix real( Matrix );
 
 /* Matlab: imag(). */
 Matrix imag( Matrix );
+
+/* Matlab: tan(). */
+Matrix tan( Matrix );
+
+/* Matlab: cos(). */
+Matrix cos( Matrix );
+
+/* Matlab: sin(). */
+Matrix sin( Matrix );
 
 /* Matlab: log10(). */
 Matrix log10( Matrix );
