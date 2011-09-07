@@ -241,6 +241,26 @@ int Matrix::getElement( complex <double> *dat, size_t col, size_t row )
 	return 0;
 }
 
+/* getElement(). */
+int Matrix::getElement( double *dat, size_t index )
+{
+	complex <double> temp;
+	if( getElement( &temp, index ) < 0 )
+		return -1;
+	*dat = temp.real();
+	return 0;
+}
+
+/* getElement(). */
+int Matrix::getElement( double *dat, size_t col, size_t row )
+{
+	complex <double> temp;
+	if( getElement( &temp, col, row ) < 0 )
+		return -1;
+	*dat = temp.real();
+	return 0;
+}
+
 /* setElement(). */
 int Matrix::setElement( complex <double> dat, size_t index )
 {
@@ -258,6 +278,12 @@ int Matrix::setElement( complex <double> dat, size_t index )
 	}
 	data[ index / Nrows ][ index % Nrows ] = dat;
 	return 0;
+}
+
+/* setElement(). */
+int Matrix::setElement( double dat, size_t index )
+{
+	return setElement( complex<double>( dat, 0 ), index );
 }
 
 /* setElement(): complex value. */
@@ -1861,6 +1887,54 @@ Matrix Matrix::operator! ()
 }
 
 
+/* Matlab: tan(). */
+Matrix tan( Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = tan( dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
+/* Matlab: sin(). */
+Matrix sin( Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = sin( dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
+/* Matlab: cos(). */
+Matrix cos( Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = cos( dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
 /* Matlab: log10(). */
 Matrix log10( Matrix mat )
 {
@@ -2158,6 +2232,28 @@ size_t length( Matrix mat )
 	size_t col, row;
 	mat.size( &col, &row );
 	return col > row ? col : row;
+}
+
+/* Matlab: size(). */
+Matrix size( Matrix mat )
+{
+	size_t col, row;
+	mat.size( &col, &row );
+	double dat[ 2 ] = { col, row };
+	Matrix ret( dat, 2, 1 );
+	return ret;
+}
+
+size_t size( Matrix mat, size_t dim )
+{
+	size_t col, row;
+	mat.size( &col, &row );
+	if( dim == 1 )
+		return row;
+	else if( dim == 2 )
+		return col;
+	cerr << "Error getting size for an unsupported dimension." << endl;
+	return 0;
 }
 
 /* Matlab: max(): One matrix. */

@@ -14,6 +14,9 @@ test_voicebox: test_voicebox.o voicebox.o matrices.o
 test_sndconv: test_sndconv.o sndconv.o
 	${CXX} ${CXX_LDFLAGS} $^ -o $@
 
+test_specsub: test_specsub.o sndconv.o matrices.o voicebox.o
+	${CXX} ${CXX_LDFLAGS} $^ -o $@
+
 test_matrices: test_matrices.o matrices.o
 	${CXX} ${CXX_LDFLAGS} $^ -o $@
 
@@ -21,4 +24,4 @@ test_matrices: test_matrices.o matrices.o
 	${CXX} ${CXX_CFLAGS} -c $< -o $@
 
 clean:
-	$(RM) *.o audioenh test_matrices test_sndconv test_voicebox out.{wav,ogg,mp3}
+	$(RM) *.o audioenh test_matrices test_sndconv test_voicebox test_specsub out.??? 
