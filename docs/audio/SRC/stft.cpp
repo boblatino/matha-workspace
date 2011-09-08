@@ -1,4 +1,4 @@
-#include "matrices.h"
+#include "stft.h"
 
 using namespace std;
 
@@ -31,9 +31,8 @@ Matrix stft( Matrix x, double f, Matrix w, double h, double sr)
 
 	if( length(w) == 1 )
 	{
-		complex <double> wec;
-		w.getElement( &wec, 0, 0 );
-		we = wec.real();
+		w.getElement( &temp, 0, 0 );
+		we = temp.real();
 		if( we == 0 )
 		{
 			// special case: rectangular window
@@ -106,7 +105,7 @@ Matrix stft( Matrix x, double f, Matrix w )
 
 Matrix stft( Matrix x, double f )
 {
-	Matrix w( &f, 0, 0 );
+	Matrix w( &f, 1, 1 );
 	return stft( x, f, w );
 }
 

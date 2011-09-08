@@ -245,5 +245,12 @@ int main()
 	cout << "conv( seq( 0, 9 ).transpose(), seq( 5, -1, 0 ) ).printout();" << endl;
 	conv( seq( 0, 9 ).transpose(), seq( 5, -1, 0 ) ).printout();
 
+	cout << "cat( 2, reshape( seq( 0, 5 ), 2, 3 ), reshape( seq( 0, 3 ), 2, 2 ) );" << endl;
+	cat( 2, reshape( seq( 0, 5 ), 2, 3 ), reshape( seq( 0, 3 ), 2, 2 ) ).printout();
+
+	cout << "cat( 1, reshape( seq( 0, 5 ), 3, 2 ), reshape( seq( 0, 3 ), 2, 2 ) );" << endl;
+	cat( 1, reshape( seq( 0, 5 ), 3, 2 ), reshape( seq( 0, 3 ), 2, 2 ) ).printout();
+
+
 	return 0;
 }
