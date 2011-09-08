@@ -254,6 +254,9 @@ Matrix seq( double start, double end );
 /* replacing matlab's (start:step:end). */
 Matrix seq( double start, double step, double end );
 
+/* matlab: cat(). */
+Matrix cat( size_t dim, Matrix mata, Matrix matb );
+
 /* Fix functions. */
 double fix( double val );
 std::complex<double> fix( std::complex<double> val );

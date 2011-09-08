@@ -2820,6 +2820,53 @@ Matrix seq( double start, double step, double end )
 	return ret;
 }
 
+/* matlab: cat(). */
+Matrix cat( size_t dim, Matrix mata, Matrix matb )
+{
+	size_t col, row;
+	switch( dim )
+	{
+		case 1:
+			if( size( mata, 2 ) != size( matb, 2 ) )
+			{
+				cerr << "Error concatinating matrices with inconsistent dimensions." << endl;
+				Matrix ret;
+				return ret;
+			}
+			matb.size( &col, &row );
+			for( size_t i = 0; i < row; i++ )
+			{
+				complex <double> dat[ col ];
+				for( size_t j = 0; j < col; j++ )
+					matb.getElement( dat + j, j, i );
+				mata.addRow( dat, col );
+			}
+			return mata;
+			break;
+		case 2:
+			if( size( mata, 1 ) != size( matb, 1 ) )
+			{
+				cerr << "Error concatinating matrices with inconsistent dimensions." << endl;
+				Matrix ret;
+				return ret;
+			}
+			matb.size( &col, &row );
+			for( size_t i = 0; i < col; i++ )
+			{
+				complex <double> dat[ row ];
+				for( size_t j = 0; j < row; j++ )
+					matb.getElement( dat + j, i, j );
+				mata.addColumn( dat, row );
+			}
+			return mata;
+			break;
+		default:
+			cerr << "Error concatinating matrices over an unsupported dimension" << endl;
+			Matrix ret;
+			return ret;
+	}
+}
+
 /* Fix functions. */
 double fix( double val )
 {
