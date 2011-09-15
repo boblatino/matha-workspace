@@ -1097,7 +1097,7 @@ Matrix Matrix::operator- ( Matrix Mat2 )
 {
 	if( this->isempty() || Mat2.isempty() )
 	{
-		cerr << "Error adding an empty matrix." << endl;
+		cerr << "Error subtracting an empty matrix." << endl;
 		Matrix ret;
 		return ret;
 	}
@@ -1105,7 +1105,7 @@ Matrix Matrix::operator- ( Matrix Mat2 )
 	{
 		complex<double> temp;
 		getElement( &temp, 0, 0 );
-		return Mat2 - temp;
+		return ( Mat2 - temp ) * -1;
 	}
 	if( Mat2.Ncolumns == 1 && Mat2.Nrows == 1 )
 	{
