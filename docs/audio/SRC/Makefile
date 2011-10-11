@@ -17,6 +17,9 @@ test_adaptivefilter: test_adaptivefilter.o adaptivefilter.o matrices.o sndconv.o
 test_stft: test_stft.o stft.o matrices.o istft.o
 	${CXX} ${CXX_LDFLAGS} $^ -o $@
 
+test_lpc: test_lpc.o lpc.o matrices.o
+	${CXX} ${CXX_LDFLAGS} $^ -o $@
+
 test_specsub: test_specsub.o sndconv.o matrices.o voicebox.o
 	${CXX} ${CXX_LDFLAGS} $^ -o $@
 

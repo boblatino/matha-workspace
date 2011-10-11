@@ -98,11 +98,14 @@ class Matrix
 		int setElement( std::complex <double>, size_t );
 		int setElement( double, size_t );
 		Matrix getSubMatrix( size_t start_col, size_t end_col, size_t start_row, size_t end_row );
+		std::complex <double> * getRow( size_t row );
+		std::complex <double> * getColumn( size_t column );
 
 		/* Miscellaneous. */
 		void size( size_t *, size_t* );
 		bool isempty();
 		bool isvector();
+		bool isreal();
 		void printout();
 		void clear();
 		Matrix reshape( size_t, size_t );
@@ -160,7 +163,11 @@ size_t size( Matrix, size_t dim );
 
 /* Matlab: sum(). */
 Matrix sum( Matrix );
-Matrix sum( Matrix, double );
+Matrix sum( Matrix, size_t );
+
+/* Matlab: mean(). */
+Matrix mean( Matrix );
+Matrix mean( Matrix, size_t );
 
 /* Matlab: sqrt(). */
 Matrix sqrt( Matrix );
@@ -183,6 +190,7 @@ Matrix pow2( Matrix );
 
 /* Matlab: nextpow2. */
 Matrix nextpow2( Matrix );
+double nextpow2( double );
 
 /* Matlab: conj(). */
 Matrix conj( Matrix );
@@ -193,6 +201,9 @@ Matrix real( Matrix );
 /* Matlab: imag(). */
 Matrix imag( Matrix );
 
+/* Matlab: abs(). */
+Matrix abs( Matrix );
+
 /* Matlab: tan(). */
 Matrix tan( Matrix );
 
@@ -201,6 +212,12 @@ Matrix cos( Matrix );
 
 /* Matlab: sin(). */
 Matrix sin( Matrix );
+
+/* Matlab: atan2(). */
+Matrix atan2( Matrix, Matrix );
+Matrix atan2( std::complex<double>, Matrix );
+Matrix atan2( Matrix, std::complex<double> );
+std::complex<double> atan2( std::complex<double>, std::complex<double> );
 
 /* Matlab: log10(). */
 Matrix log10( Matrix );
@@ -213,6 +230,8 @@ Matrix ceil( Matrix );
 
 /* Matlab: log2(). */
 Matrix log2( Matrix );
+std::complex <double> log2( std::complex <double> );
+double log2( double );
 
 /* Creating a matrix of ones. */
 Matrix ones( size_t );
@@ -226,8 +245,18 @@ Matrix zeros( size_t, size_t );
 Matrix eye( size_t );
 Matrix eye( size_t, size_t );
 
+/* Creating a random (normal distribution) matrix. */
+Matrix randn( size_t );
+Matrix randn( size_t, size_t );
+
 /* matlab: hamming(). */
 Matrix hamming( size_t );
+
+/* matlab: hanning(). */
+Matrix hanning( size_t );
+
+/* matlab: hann(). */
+Matrix hann( size_t );
 
 /* matlab: reshape(). */
 Matrix reshape( Matrix, size_t, size_t );
@@ -267,5 +296,21 @@ bool any( Matrix );
 
 /* matlab: rem() */
 double rem( double val1, double val2 );
+Matrix rem( Matrix mat, double val );
+Matrix rem( double val, Matrix mat );
+Matrix rem( Matrix mat1, Matrix mat2 );
+
+/* Matlab: filter(). */
+Matrix filter( Matrix b, Matrix a, Matrix x );
+
+/* Matlab: toeplitz(). */
+Matrix toeplitz( Matrix );
+Matrix toeplitz( Matrix col, Matrix row );
+
+/* Matlab: xcorr(). */
+Matrix xcorr( Matrix );
+
+/* Matlab: lu(). */
+void lu( Matrix a, Matrix *l, Matrix *u, Matrix *p );
 
 #endif //__MATRICES_H__

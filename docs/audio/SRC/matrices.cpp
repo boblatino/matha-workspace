@@ -1,4 +1,5 @@
 #include "matrices.h"
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <mffm/complexFFT.H>
@@ -108,11 +109,132 @@ Matrix Matrix::cofactors()
 	return ret;
 }
 
+/* Matlab: lu(). */
+void lu( Matrix a, Matrix *out_l, Matrix *out_u, Matrix *out_p )
+{
+	complex<double> * temp;
+	size_t a_col, a_row, l_col, l_row, u_col, u_row;
+	a.size( &a_col, &a_row );
+	l_row = a_row;
+	l_col = a_row < a_col ? a_row : a_col;
+	u_row = a_col < a_row ? a_col : a_row;
+	u_col = a_col;
+	complex <double> *a_dat = (complex <double> *) malloc( a_col * a_row * sizeof( complex <double> ) );
+	complex <double> *l_dat = (complex <double> *) malloc( l_col * l_row * sizeof( complex <double> ) );
+	complex <double> *u_dat = (complex <double> *) malloc( u_col * u_row * sizeof( complex <double> ) );
+	Matrix p = eye( a_row );
+
+	for( size_t i = 0; i < a_col; i++ )
+		for( size_t j = 0; j < a_row; j++ )
+			a.getElement( a_dat + i * a_row + j, i, j );
+
+/*
+	size_t diag = a_col < a_row ? a_col : a_row;
+	for( size_t i = 0; i < diag; i++ )
+	{
+		if( *( a_dat + i * a_row + i ) == complex <double> ( 0, 0 ) )
+		{
+			if( a_col == a_row && i == a_col - 1 )
+				break;
+			if( a_col >= a_row )
+			{
+				char inf[ a_col - i - 1 ];
+				for( size_t k = i + 1; k < a_col; k++ )
+				{
+					if( *( a_dat + k * a_row + i ) == complex <double> ( 0, 0 ) )
+					{
+						inf[ k - i - 1 ] = -1;
+						continue;
+					}
+					inf[ k - i - 1 ] = 0;
+					for( size_t j = i + 1; j < a_row; j++ )
+						if( *( a_dat + k * a_row + j ) == complex <double> ( 0, 0 ) )
+							inf[ k - i - 1 ]++
+				}
+				//Find maximum zeros and exchange.
+			}
+			else
+			{
+
+			}
+		}
+	}
+*/
+
+	for( size_t j = 0; j < a_col; j++ )
+	{
+		for( size_t i = 0; i <= j; i++ )
+		{
+			temp = u_dat + j * u_row + i;
+			*temp = *( a_dat + j * a_row + i );
+			for( size_t k = 0; k < i; k++ )
+				*temp -= *( l_dat + k * l_row + i ) * *( u_dat + j * u_row + k );
+			*( l_dat + j * l_row + i ) = 0;
+		}
+
+		*( l_dat + j * l_row + j ) = 1;
+
+		for( size_t i = j + 1; i < a_row; i++ )
+		{
+			temp = l_dat + j * l_row + i;
+			*temp = *( a_dat + j * a_row + i );
+			for( size_t k = 0; k < j; k++ )
+				*temp -= *( l_dat + k * l_row + i ) * *( u_dat + j * u_row + k );
+			*temp /= *( u_dat + j * u_row + j );
+			*( u_dat + j * u_row + i ) = 0;
+		}
+	}
+
+	if( out_l != NULL )
+	{
+		Matrix l( l_dat, l_col, l_row );
+		*out_l = l;
+	}
+	if( out_u != NULL )
+	{
+		Matrix u( u_dat, u_col, u_row );
+		*out_u = u;
+	}
+	if( out_p != NULL )
+	{
+		*out_p = p;
+	}
+}
+
 /* Matrix determinant. */
 complex<double> Matrix::determinant()
 {
 	if( Nrows != Ncolumns )
+	{
+		cerr << "Error cannot calculate the determinant of a non-square matrix." << endl;
 		return NAN;
+	}
+	if( Nrows == 2 )
+	{
+		return data[0][0] * data[1][1] - data[1][0] * data[0][1];
+	}
+
+	Matrix u;
+	lu( *this, NULL, &u, NULL );
+	complex <double> ret( 1, 0 ), temp;
+	for( size_t i = 0; i < Ncolumns; i++ )
+	{
+		u.getElement( &temp, i, i );
+		ret *= temp;
+	}
+	return ret;
+}
+
+/*Deprecated.*/
+/* Matrix determinant. */
+/*
+complex<double> Matrix::determinant() 
+{
+	if( Nrows != Ncolumns )
+	{
+		cerr << "Error cannot calculate the determinant of a non-square matrix." << endl;
+		return NAN;
+	}
 	if( Nrows == 2 )
 	{
 		return data[0][0] * data[1][1] - data[1][0] * data[0][1];
@@ -129,6 +251,7 @@ complex<double> Matrix::determinant()
 	}
 	return det;
 }
+*/
 
 /* reshape(). */
 Matrix Matrix::reshape( size_t row, size_t col )
@@ -169,6 +292,24 @@ bool Matrix::isvector()
 bool Matrix::isempty()
 {
 	return !initialized;
+}
+
+/* isreal(). */
+bool isreal( complex <double> val )
+{
+	if( val.imag() == 0 )
+		return true;
+	return false;
+}
+
+bool Matrix::isreal()
+{
+	for( size_t i = 0; i < Ncolumns; i++ )
+		for( size_t j = 0; j < Nrows; j++ )
+			//if( !isreal( data [ i ][ j ] ) )
+			if( data[ i ][ j ].imag() != 0 )
+				return false;
+	return true;
 }
 
 /* clear(). */
@@ -1866,6 +2007,22 @@ Matrix imag( Matrix mat )
 	return ret;
 }
 
+/* Matlab: abs(). */
+Matrix abs( Matrix mat )
+{
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+	complex<double> dat[ cols * rows ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( dat + i * rows + j, i, j );
+			dat[ i * rows + j ] = abs( dat[ i * rows + j ] );
+		}
+	Matrix ret( dat, cols, rows );
+	return ret;
+}
+
 /* Matlab: ~). */
 Matrix Matrix::operator! ()
 {
@@ -1890,6 +2047,12 @@ Matrix Matrix::operator! ()
 /* Matlab: tan(). */
 Matrix tan( Matrix mat )
 {
+	if( mat.isempty() )
+	{
+		cerr << "Error caluclating tan of an empty matrix" << endl;
+		Matrix ret;
+		return ret;
+	}
 	size_t cols, rows;
 	mat.size( &cols, &rows );
 	complex<double> dat[ cols * rows ];
@@ -1906,6 +2069,12 @@ Matrix tan( Matrix mat )
 /* Matlab: sin(). */
 Matrix sin( Matrix mat )
 {
+	if( mat.isempty() )
+	{
+		cerr << "Error caluclating sin of an empty matrix" << endl;
+		Matrix ret;
+		return ret;
+	}
 	size_t cols, rows;
 	mat.size( &cols, &rows );
 	complex<double> dat[ cols * rows ];
@@ -1919,9 +2088,107 @@ Matrix sin( Matrix mat )
 	return ret;
 }
 
+/* Matlab: atan2(). */
+complex<double> atan2( complex<double> val1, complex <double> val2 )
+{
+	return atan( val1.real() / val2.real() );
+}
+
+Matrix atan2( Matrix mat, complex <double> val )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error caluclating atan2 of an empty matrix" << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	double dat[ col * row ];
+	complex<double> temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = atan( temp.real() / val.real() );
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+Matrix atan2( complex <double> val, Matrix mat)
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error caluclating atan2 of an empty matrix" << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+	double dat[ col * row ];
+	complex<double> temp;
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			dat[ i * row + j ] = atan( val.real() / temp.real() );
+		}
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+Matrix atan2( Matrix mat1, Matrix mat2 )
+{
+	if( mat1.isempty() || mat2.isempty() )
+	{
+		cerr << "Error caluclating atan2 of an empty matrix" << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col1, row1, col2, row2;
+	mat1.size( &col1, &row1 );
+	mat2.size( &col2, &row2 );
+	if( col1 == 1 && row1 == 1)
+	{
+		complex <double> temp;
+		mat1.getElement( &temp, 0, 0 );
+		return atan2( temp, mat2 );
+	}
+	else if( col2 == 1 && row2 == 1)
+	{
+		complex <double> temp;
+		mat2.getElement( &temp, 0, 0 );
+		return atan2( mat1, temp );
+	}
+	else if( col1 != col2 || row1 != row2 )
+	{
+		cerr << "Error: Atan2: Matrices dimensions mismatch." << endl;
+		Matrix ret;
+		return ret;
+	}
+	complex<double> temp, temp2;
+	double dat[ col1 * row1 ];
+	for( size_t i = 0; i < col1; i++ )
+		for( size_t j = 0; j < row1; j++ )
+		{
+			mat1.getElement( &temp2, i, j );
+			mat2.getElement( &temp, i, j );
+			dat[ i * row1 + j ] = atan( temp2.real() / temp.real() );
+		}
+	Matrix ret( dat, col1, row1 );
+	return ret;
+}
+
 /* Matlab: cos(). */
 Matrix cos( Matrix mat )
 {
+	if( mat.isempty() )
+	{
+		cerr << "Error caluclating cos of an empty matrix" << endl;
+		Matrix ret;
+		return ret;
+	}
 	size_t cols, rows;
 	mat.size( &cols, &rows );
 	complex<double> dat[ cols * rows ];
@@ -2120,13 +2387,30 @@ Matrix log2( Matrix mat )
 		for( size_t j = 0; j < rows; j++ )
 		{
 			mat.getElement( dat + i * rows + j, i, j );
-			dat[ i * rows + j ] = log( dat[ i * rows + j ] ) / log( complex<double>( 2, 0 ) );
+			//dat[ i * rows + j ] = log( dat[ i * rows + j ] ) / log( complex<double>( 2, 0 ) );
+			dat[ i * rows + j ] = log2( dat[ i * rows + j ] );
 		}
 	Matrix ret( dat, cols, rows );
 	return ret;
 }
 
+complex <double> log2( complex <double> val )
+{
+	return log( val ) / log( complex<double>( 2, 0 ) );
+}
+
+double log2( double val )
+{
+	return log( val ) / log( 2 );
+}
+
 /* Matlab: nextpow2(). */
+double nextpow2( double val )
+{
+	return ceil( log2( val ) );
+}
+
+
 Matrix nextpow2( Matrix mat )
 {
 	return ceil( log2( mat ) );
@@ -2222,6 +2506,39 @@ Matrix eye( size_t row, size_t col )
 	for( size_t i = 0; i < col; i++ )
 		for( size_t j = 0; j < row; j++ )
 			dat[ i * row + j ] = complex<double>( i == j, 0 );
+	Matrix ret( dat, col, row );
+	return ret;
+}
+
+/* Creating a square random (normal distribution) matrix. */
+/* Internal function */
+double randn()
+{
+	float u = (double) rand() / RAND_MAX;
+	float v = (double) rand() / RAND_MAX;
+	double s = pow( u, 2 ) + pow( v, 2 );
+	double r = u * sqrt( -2 * log( s ) / s );
+	if( !isnan( r ) )
+		return r;
+	r = v * sqrt( -2 * log( s ) / s );
+	if( !isnan( r ) )
+		return r;
+	return randn();
+}
+
+Matrix randn( size_t n )
+{
+	return randn( n, n );
+}
+
+/* Creating an random (normal distribution) matrix. */
+Matrix randn( size_t row, size_t col )
+{
+	//double dat[ col] [ row ];
+	double *dat = (double *) malloc( col * row * sizeof( double ) );
+	for( size_t i = 0; i < col; i++ )
+		for( size_t j = 0; j < row; j++ )
+			*( dat + i * col + j ) = randn();
 	Matrix ret( dat, col, row );
 	return ret;
 }
@@ -2429,7 +2746,7 @@ Matrix sum( Matrix mat )
 }
 
 /* Matlab: sum(): One matrix. */
-Matrix sum( Matrix mat, double dim )
+Matrix sum( Matrix mat, size_t dim )
 {
 	if( mat.isempty() )
 	{
@@ -2437,7 +2754,7 @@ Matrix sum( Matrix mat, double dim )
 		Matrix ret;
 		return ret;
 	}
-	if( dim > 2 || dim < 1 )
+	if( dim != 2 && dim != 1 )
 	{
 		cerr << "Error: sum: Dimension not supported." << endl;
 		Matrix ret;
@@ -2475,6 +2792,44 @@ Matrix sum( Matrix mat, double dim )
 		Matrix ret( dat, 1, row );
 		return ret;
 	}
+	/*Shouldn't reach here.*/
+	Matrix ret;
+	return ret;
+}
+
+/* Matlab: mean(): with dimension. */
+Matrix mean( Matrix mat )
+{
+	size_t col, row;
+	mat.size( &col, &row );
+	if( row == 1 )
+		return mean( mat, 2 );
+	return mean( mat, 1 );
+}
+
+/* Matlab: mean(): One matrix. */
+Matrix mean( Matrix mat, size_t dim )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: getting the mean an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+	if( dim != 2 && dim != 1 )
+	{
+		cerr << "Error: mean: Dimension not supported." << endl;
+		Matrix ret;
+		return ret;
+	}
+	size_t col, row;
+	mat.size( &col, &row );
+
+	if( dim == 1 )
+		return sum( mat, 1 ) / row;
+	else if( dim == 2 )
+		return sum( mat, 2 ) / col;
+
 	/*Shouldn't reach here.*/
 	Matrix ret;
 	return ret;
@@ -2546,6 +2901,28 @@ Matrix hamming( size_t n )
 	complex<double> dat[ n ];
 	for( size_t i = 0; i < n; i++ )
 		dat[ i ] = complex<double>( 0.54 - 0.46 * cos( 2 * M_PI * i / ( n - 1 ) ) , 0 );
+
+	Matrix ret( dat, 1, n );
+	return ret;
+}
+
+/* matlab: hann(). */
+Matrix hann( size_t n )
+{
+	complex<double> dat[ n ];
+	for( size_t i = 0; i < n; i++ )
+		dat[ i ] = complex<double>( 0.5  * ( 1 - cos( 2 * M_PI * i / ( n - 1 ) ) ), 0 );
+
+	Matrix ret( dat, 1, n );
+	return ret;
+}
+
+/* matlab: hanning(). */
+Matrix hanning( size_t n )
+{
+	complex<double> dat[ n ];
+	for( size_t i = 0; i < n; i++ )
+		dat[ i ] = complex<double>( 0.5  * ( 1 - cos( 2 * M_PI * ( i + 1 ) / ( n + 1 ) ) ), 0 );
 
 	Matrix ret( dat, 1, n );
 	return ret;
@@ -2937,9 +3314,132 @@ bool any( Matrix mat )
 	return false;
 }
 
+/* matlab: rem(). */
 double rem( double val1, double val2 )
 {
 	return ( ( val1 / val2 ) - fix( val1 / val2 ) ) * val2 ;
+}
+
+Matrix rem( Matrix mat, double val )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: calcualting remainder of an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	if( val == 0 )
+	{
+		cerr << "Error: rem: division by zero." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+
+	complex <double> temp;
+	double data[ rows * cols ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			if( temp.imag() != 0 )
+			{
+				cerr << "Error: calculating remainder of an imaginary number." << endl;
+				Matrix ret;
+				return ret;
+			}
+			data[ i * rows + j] = rem( temp.real(), val );
+		}
+
+	Matrix ret( data, cols, rows );
+	return ret;
+}
+
+Matrix rem( double val, Matrix mat )
+{
+	if( mat.isempty() )
+	{
+		cerr << "Error: calcualting remainder of an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	size_t cols, rows;
+	mat.size( &cols, &rows );
+
+	complex <double> temp;
+	double data[ rows * cols ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat.getElement( &temp, i, j );
+			if( temp.imag() != 0 )
+			{
+				cerr << "Error: calculating remainder of an imaginary number." << endl;
+				Matrix ret;
+				return ret;
+			}
+			if( temp.real() == 0 )
+			{
+				cerr << "Error: rem: division by zero." << endl;
+				Matrix ret;
+				return ret;
+			}
+			data[ i * rows + j] = rem( val, temp.real() );
+		}
+
+	Matrix ret( data, cols, rows );
+	return ret;
+}
+
+Matrix rem( Matrix mat1, Matrix mat2 )
+{
+	if( mat1.isempty() || mat2.isempty() )
+	{
+		cerr << "Error: calcualting remainder of an empty matrix." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	size_t cols, rows, cols2, rows2;
+	mat1.size( &cols, &rows );
+	mat2.size( &cols2, &rows2 );
+
+	if( !( cols == cols2 && rows == rows2 ) )
+	{
+		cerr << "Error: rem: Matrices dimensions don't match." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> temp, temp2;
+	double data[ rows * cols ];
+	for( size_t i = 0; i < cols; i++ )
+		for( size_t j = 0; j < rows; j++ )
+		{
+			mat1.getElement( &temp, i, j );
+			mat2.getElement( &temp2, i, j );
+			if( temp.imag() != 0 || temp2.imag() != 0 )
+			{
+				cerr << "Error: calculating remainder of an imaginary number." << endl;
+				Matrix ret;
+				return ret;
+			}
+			if( temp2.real() == 0 )
+			{
+				cerr << "Error: rem: division by zero." << endl;
+				Matrix ret;
+				return ret;
+			}
+			data[ i * rows + j] = rem( temp.real(), temp2.real() );
+		}
+
+	Matrix ret( data, cols, rows );
+	return ret;
+
 }
 
 /* matlab:conv() */
@@ -2967,3 +3467,131 @@ Matrix conv( Matrix mata, Matrix matb )
 
 }
 
+/* Matlab: filter(). */
+Matrix filter( Matrix b, Matrix a, Matrix x )
+{
+	if( !b.isvector() || !a.isvector() || !x.isvector() )
+	{
+		cerr << "Error: Only 1-D filter is supported. All inputs must be vectors." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	complex <double> temp;
+
+	a.getElement( &temp, 0 );
+	if( temp == complex<double>( 0, 0 ) )
+	{
+		cerr << "Error: First coefficent of the denominator is a zero." << endl;
+		Matrix ret;
+		return ret;
+	}
+	else if( temp != complex< double > ( 1, 0 ) )
+	{
+		b /= temp;
+		a /= temp;
+	}
+
+	size_t len = length( x );
+	complex <double> z( 0, 0 );
+	complex <double> *x_data = (complex <double> *) malloc( len * sizeof( complex <double> ) );
+	complex <double> *y_data = (complex <double> *) malloc( len * sizeof( complex <double> ) );
+	complex <double> *a_data = (complex <double> *) malloc( length( a ) * sizeof( complex <double> ) );
+	complex <double> *b_data = (complex <double> *) malloc( length( b ) * sizeof( complex <double> ) );
+	for( size_t i = 0; i < len; i++ )
+		x.getElement( x_data + i, i );
+	for( size_t i = 0; i < length( b ); i++ )
+		b.getElement( b_data + i, i );
+	for( size_t i = 0; i < length( a ); i++ )
+		a.getElement( a_data + i, i );
+
+	for( size_t i = 0; i < len; i++ )
+	{
+		*( y_data + i ) = z;
+		for( size_t j = 0; j < length( b ) && j <= i; j++ )
+			*( y_data + i ) += *( b_data + j ) * *( x_data + i - j );
+
+		for( size_t j = 0; j < length( a ) && j < i; j++ )
+			*( y_data + i ) -= *( a_data + j + 1 ) * *( y_data + i - j - 1 );
+	}
+	
+	Matrix y( y_data, size( x, 2 ), size( x, 1 ) );
+	return y;
+}
+
+/* Matlab: toeplitz(). */
+Matrix toeplitz( Matrix row )
+{
+	return toeplitz( row, row );
+}
+
+Matrix toeplitz( Matrix col, Matrix row )
+{
+	if( col.isempty() || row.isempty() )
+	{
+		cerr << "Error: Cannot create toeplitz matrix from an empty vector" << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	col = reshape( col, 1, size( col, 1 ) * size( col, 2 ) );
+	row = reshape( row, 1, size( row, 1 ) * size( row, 2 ) );
+
+	size_t len_r = length( row );
+	size_t len_c = length( col );
+	complex <double> * c_data = ( complex<double> * ) malloc( len_c * sizeof( complex<double> ) );
+	complex <double> * r_data = ( complex<double> * ) malloc( len_r * sizeof( complex<double> ) );
+	complex <double> * o_data = ( complex<double> * ) malloc( len_r * len_c * sizeof( complex<double> ) );
+
+	for( size_t i = 0; i < len_c; i++ )
+		col.getElement( c_data + i, i );
+	for( size_t i = 0; i < len_r; i++ )
+		row.getElement( r_data + i, i );
+
+	if( *r_data != *c_data )
+		cerr << "Warning: Toeplitz: First elements of the row and column do not match." << endl; 
+
+	for( size_t i = 0; i < len_r; i++ )
+	{
+		for( size_t j = 0; j < i; j++ )
+			*( o_data + i * len_c + j ) = *( r_data + i - j );
+
+		for( size_t j = 0; j < len_c - i; j++ )
+			*( o_data + i * len_c + i + j ) = *( c_data + j );
+	}
+
+	Matrix out( o_data, length( row ), length( col ) );
+	return out;
+}
+
+/* Matlab: xcorr. */
+Matrix xcorr( Matrix x )
+{
+	if( !x.isvector() )
+	{
+		cerr << "Error: xcorr: Only vector auto-correlation is supported." << endl;
+		Matrix ret;
+		return ret;
+	}
+
+	Matrix c = fft( x, pow( 2, nextpow2( 2 * length( x ) - 1 ) ) );
+	c = ifft( power( abs(c), 2 ));
+
+	if( x.isreal() )
+		c = real( c );
+
+	size_t maxlag = length( x ) - 1;
+
+	//c = cat( ,c(end-maxlag+1:end,:), c(1:maxlag+1,:) );
+	size_t end = length( c );
+	if( size( x, 1) == 1)
+	{//[ 1 2 3]
+		c = cat( 2, c.getSubMatrix( end - maxlag, end - 1, 0, 0 ), c.getSubMatrix( 0, maxlag, 0, 0 ) );
+	}
+	else
+	{//[1; 2; 3 ]
+		c = cat( 1, c.getSubMatrix( 0, 0, end - maxlag, end - 1), c.getSubMatrix( 0, 0, 0, maxlag ) );
+	}
+
+	return c;
+}
