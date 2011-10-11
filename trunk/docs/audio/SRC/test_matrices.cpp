@@ -251,6 +251,55 @@ int main()
 	cout << "cat( 1, reshape( seq( 0, 5 ), 3, 2 ), reshape( seq( 0, 3 ), 2, 2 ) );" << endl;
 	cat( 1, reshape( seq( 0, 5 ), 3, 2 ), reshape( seq( 0, 3 ), 2, 2 ) ).printout();
 
+	cout << "filter( seq( 1,3,14 ), seq( 12, -2, 5), ones( 1, 7 ) ).printout();" << endl;
+	filter( seq( 1,3,14 ), seq( 12, -2, 5), ones( 1, 7 ) ).printout();
 
+	cout << "toeplitz( seq( 1,2,9 ) ).printout();" << endl;
+	toeplitz( seq( 1,2,9 ) ).printout();
+
+	cout << "toeplitz( seq( 5,-1,3 ), reshape( seq( 13:-4:1 ), 2, 2 ) ).printout();" << endl;
+	toeplitz( seq( 5,-1,3 ), reshape( seq( 13, -4, 1 ), 2, 2 ) ).printout();
+
+	cout<< "hanning( 7 ).printout();" << endl;
+	hanning( 7 ).printout();
+
+	cout << "m3.printout();" << endl;
+	m3.printout();
+
+	cout << "mean( m3, 1 ).printout();" << endl;
+	mean( m3, 1 ).printout();
+
+	cout << "mean( m3, 2 ).printout();" << endl;
+	mean( m3, 2 ).printout();
+
+	cout << "rem( seq( 1, 5 ), 3 ).printout()" << endl;;
+	rem( seq( 1, 5 ), 3 ).printout();
+
+	cout << "rem( 3, seq( 1, 5 ) ).printout()" << endl;;
+	rem( 3, seq( 1, 5 ) ).printout();
+
+	cout << "rem( seq( 1, 5 ), ones( 1, 5 ) * 3 ).printout();" << endl;
+	rem( seq( 1, 5 ), ones( 1, 5 ) * 3 ).printout();
+
+	cout << "xcorr( seq( 1, 5 ) ).printout();" << endl;
+	xcorr( seq( 1,5 ) ).printout();
+
+	cout << "randn( 8, 7 ).printout();" << endl;
+	randn( 8, 7 ).printout();
+
+	cout << "atan2( seq( 1, .5, 5 ), ones( 1, 9 ) ).printout();" << endl;
+	atan2( seq( 1, .5, 5 ), ones( 1, 9 ) ).printout();
+
+	Matrix ml, mu, mp;
+	cout << "lu( reshape( seq( 1, 6 ), 2, 3 ), &ml, &mu, &mp );" << endl;
+	lu( cat( 1, seq( 1, 3 ), seq( 4, 6 ) ), &ml, &mu, &mp );
+	cout << "ml.printout();" << endl;
+	ml.printout();
+	cout << "mu.printout();" << endl;
+	mu.printout();
+	cout << "mp.printout();" << endl;
+	mp.printout();
+	cout << "( mp * ml * mu ).printout();" << endl;
+	( mp * ml * mu ).printout();
 	return 0;
 }
