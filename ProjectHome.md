@@ -1,0 +1,1 @@
+Created by the Alexandria AI/ML group for testing path planning algorithms.  Intended to run on linux, providing 2D friction-free workspaces.  Written in C++, and loads algorithms to test from shared objects.
